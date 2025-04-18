@@ -223,7 +223,6 @@ class ChartConfigModel extends ChangeNotifier {
       return null;
     }
 
-    final dynamic value = getProperty(props, targetPropName);
-    return value;
+    return getProperty(props, targetPropName);
   }
 }
