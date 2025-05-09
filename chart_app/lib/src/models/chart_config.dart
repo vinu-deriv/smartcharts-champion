@@ -1,6 +1,6 @@
+import 'dart:js';
+import 'dart:js_util';
 import 'package:chart_app/src/helpers/color.dart';
-import 'package:chart_app/src/markers/marker_group.dart';
-import 'package:chart_app/src/markers/web_marker.dart';
 import 'package:deriv_chart/deriv_chart.dart' hide ChartDefaultDarkTheme;
 import 'package:flutter/material.dart';
 import 'package:chart_app/src/interop/js_interop.dart';
@@ -89,7 +89,7 @@ class ChartConfigModel extends ChangeNotifier {
     markerGroupList = <MarkerGroup>[];
 
     for (final JSContractsUpdate _markerGroup in _markerGroupList) {
-      final List<WebMarker> markers = <WebMarker>[];
+      final List<ChartMarker> markers = <ChartMarker>[];
 
       contractType = _markerGroup.type;
 
@@ -97,7 +97,7 @@ class ChartConfigModel extends ChangeNotifier {
         if (_marker.quote != null &&
             _marker.epoch != null &&
             _marker.type != null) {
-          markers.add(WebMarker(
+          markers.add(ChartMarker(
             quote: _marker.quote!,
             epoch: _marker.epoch! * 1000,
             text: _marker.text,
@@ -123,7 +123,9 @@ class ChartConfigModel extends ChangeNotifier {
           style: MarkerStyle(
             backgroundColor: _bgColor,
           ),
-          props: _markerGroup.props,
+          props: MarkerProps(
+              hasPersistentBorders:
+                  _getProperty(_markerGroup.props, 'hasPersistentBorders')),
         ),
       );
     }
@@ -192,5 +194,35 @@ class ChartConfigModel extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Safely retrieves a property value from a JavaScript object.
+  ///
+  /// This utility method provides a safe way to access properties
+  /// from JavaScript objects
+  /// in Dart, handling the null case to prevent runtime errors.
+  ///
+  /// Parameters:
+  /// - [props]: The JavaScript object from which to retrieve the property.
+  ///   If null, the method returns null without attempting to access
+  /// any property.
+  /// - [targetPropName]: The name of the property to retrieve from the
+  /// JavaScript object.
+  ///
+  /// Returns:
+  /// - The value of the specified property if the JavaScript object exists and
+  /// contains the property.
+  /// - null if the JavaScript object is null or the property doesn't exist.
+  ///
+  /// This method is used internally to safely extract properties
+  /// from JavaScript objects
+  /// passed from the web side, particularly for marker properties in the
+  /// chart configuration.
+  dynamic _getProperty(JsObject? props, String targetPropName) {
+    if (props == null) {
+      return null;
+    }
+
+    return getProperty(props, targetPropName);
   }
 }
