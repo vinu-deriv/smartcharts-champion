@@ -1,7 +1,7 @@
 import React from 'react';
 import { toJS } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { TickSpotData } from '@deriv/api-types';
+import { TickSpotData } from 'src/types/api-types';
 import { useStores } from 'src/store';
 import LastDigitStats from './LastDigitStats';
 

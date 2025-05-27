@@ -4,12 +4,13 @@ import {
     TChartControlsWidgets,
     TChartProps,
     TGetIndicatorHeightRatio,
+    TGetTickHistory,
     TGranularity,
     TLayout,
     TSettings,
 } from 'src/types';
 import debounce from 'lodash.debounce';
-import { AuditDetailsForExpiredContract, ProposalOpenContract } from '@deriv/api-types';
+import { AuditDetailsForExpiredContract, ProposalOpenContract } from 'src/types/api-types';
 import { isDeepEqual } from 'src/utils/object';
 import LZString from 'lz-string';
 import MainStore from '.';
@@ -66,7 +67,7 @@ class ChartState {
     isStaticChart? = false;
     shouldFetchTradingTimes = true;
     shouldFetchTickHistory = true;
-    allTicks: NonNullable<AuditDetailsForExpiredContract>['all_ticks'] = [];
+    allTicks: NonNullable<AuditDetailsForExpiredContract['all_ticks']> = [];
     contractInfo: ProposalOpenContract = {};
     refreshActiveSymbols?: boolean;
     hasReachedEndOfData = false;
@@ -80,6 +81,8 @@ class ChartState {
     yAxisMargin = { top: 106, bottom: 64 };
     tradingTimes: string | null = null;
     activeSymbols: string | null = null;
+    masterData: string | null = null;
+    getTickHistory?: TGetTickHistory;
     chartControlsWidgets?: TChartControlsWidgets;
     enabledChartFooter?: boolean;
 
@@ -168,6 +171,7 @@ class ChartState {
         shouldDrawTicksFromContractInfo,
         stateChangeListener,
         getIndicatorHeightRatio,
+        getTickHistory,
         chartType,
         clearChart,
         endEpoch,
@@ -220,6 +224,18 @@ class ChartState {
         ) {
             this.activeSymbols = JSON.stringify(chartData.activeSymbols);
             this.mainStore.chart.activeSymbols?.computeActiveSymbols(chartData.activeSymbols);
+        }
+
+        if (
+            chartData?.masterData &&
+            Array.isArray(chartData.masterData) &&
+            JSON.stringify(chartData.masterData) !== this.masterData
+        ) {
+            this.masterData = JSON.stringify(chartData.masterData);
+            if (this.mainStore.chart.feed) {
+                this.mainStore.chart.feed.updateQuotes(chartData.masterData, false);
+                this.shouldFetchTickHistory = false;
+            }
         }
 
         this.chartStatusListener = chartStatusListener;
@@ -373,20 +389,20 @@ class ChartState {
             this.enableZoom = enableZoom;
         }
 
-        if (isLive != null && isLive != undefined && this.mainStore.chart.isLive != isLive) {
+        if (isLive !== null && isLive !== undefined && this.mainStore.chart.isLive !== isLive) {
             this.mainStore.chart.isLive = isLive;
             this.mainStore.chartAdapter.updateLiveStatus(isLive);
         }
 
         if (
-            startWithDataFitMode != null &&
-            startWithDataFitMode != undefined &&
-            this.mainStore.chart.startWithDataFitMode != startWithDataFitMode
+            startWithDataFitMode !== null &&
+            startWithDataFitMode !== undefined &&
+            this.mainStore.chart.startWithDataFitMode !== startWithDataFitMode
         ) {
             this.mainStore.chart.startWithDataFitMode = startWithDataFitMode;
         }
 
-        if (this.mainStore.chart.leftMargin != leftMargin) {
+        if (this.mainStore.chart.leftMargin !== leftMargin) {
             this.mainStore.chart.leftMargin = leftMargin;
             this.mainStore.chartAdapter.updateLeftMargin(leftMargin);
         }

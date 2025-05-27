@@ -242,6 +242,8 @@ class ChartStore {
             requestSubscribe,
             requestForget,
             requestForgetStream,
+            getTickHistory,
+            getQuotes,
             isMobile,
             enableRouting,
             onMessage,
@@ -256,7 +258,7 @@ class ChartStore {
             leftMargin,
         } = props;
         this.feedCall = feedCall || {};
-        this.api = new BinaryAPI(requestAPI, requestSubscribe, requestForget, requestForgetStream);
+        this.api = new BinaryAPI(requestAPI, requestSubscribe, requestForget, getTickHistory, getQuotes, requestForgetStream);
         this.currentLanguage = localStorage.getItem('current_chart_lang') ?? settings?.language?.toLowerCase();
         // trading times and active symbols can be reused across multiple charts
         this.tradingTimes =
@@ -460,6 +462,7 @@ class ChartStore {
     }
     // Calling newChart with symbolObj as undefined refreshes the chart
     newChart(symbolObj = this.currentActiveSymbol) {
+        debugger;
         if (!symbolObj) return;
 
         if (this.currentActiveSymbol) {

@@ -1,4 +1,4 @@
-import { TradingTimesResponse } from '@deriv/api-types';
+import { TradingTimesResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import { Listener, TError, TOpenClose, TTradingTimesItem, TTradingTimesSymbol } from 'src/types';
 import PendingPromise from '../utils/PendingPromise';

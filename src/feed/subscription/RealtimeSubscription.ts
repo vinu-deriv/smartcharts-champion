@@ -1,7 +1,5 @@
-import { ProposalOpenContract, TicksStreamResponse } from '@deriv/api-types';
+import { ProposalOpenContract, TicksStreamResponse } from 'src/types/api-types';
 import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
-import { IPendingPromise } from 'src/types';
-import PendingPromise from '../../utils/PendingPromise';
 import { TickHistoryFormatter } from '../TickHistoryFormatter';
 import Subscription from './Subscription';
 
@@ -23,9 +21,30 @@ class RealtimeSubscription extends Subscription {
 
     async _startSubscribe(tickHistoryRequest: TCreateTickHistoryParams) {
         const contract_info = this.contractInfo as ProposalOpenContract;
-        const [tickHistoryPromise, processTickHistory] = this._getProcessTickHistoryClosure();
+        const response = await this._binaryApi.getTickHistory(tickHistoryRequest);
+        const quotes = this._processHistoryResponse(response);
+        
+        // Create a promise that will be resolved when we receive the initial history
+        
+        // Create the callback function that will handle both history and tick updates
+        const processTickHistory = (resp: TicksStreamResponse) => {
+            if (this._mainStore.chart.isDestroyed && resp.subscription?.id) {
+                this._binaryApi.forgetStream(resp.subscription?.id);
+                return;
+            }
+            
+            // We assume that 1st response is the history, and subsequent
+            // responses are tick stream data.
+            if (['tick', 'ohlc'].includes(resp.msg_type)) {
+                this._onTick(resp);
+                return resp;
+            }
+            
+            // This is the initial history response
+            // tickHistoryPromise.resolve(resp);
+        };
 
-        //here we include duration = 'ticks' && exclude duration = 'seconds' which hasn't tick_stream, all_ticks, tick_count (consist of 15-86.400 ticks)
+        // here we include duration = 'ticks' && exclude duration = 'seconds' which hasn't tick_stream, all_ticks, tick_count (consist of 15-86.400 ticks)
         if (!this.shouldFetchTickHistory && !!contract_info.tick_stream) {
             this._binaryApi.subscribeTickHistory(
                 Object.assign(tickHistoryRequest, { count: contract_info.tick_count }),
@@ -45,14 +64,16 @@ class RealtimeSubscription extends Subscription {
             );
         }
 
-        const response = await tickHistoryPromise;
-        const quotes = this._processHistoryResponse(response);
+        // Wait for the initial history response
+        // const response = await tickHistoryPromise;
+        // const quotes = this._processHistoryResponse(response);
         this._tickCallback = processTickHistory;
 
         return { quotes, response };
     }
 
     forget() {
+        debugger;
         if (this._tickCallback) {
             const { symbol, granularity } = this._request;
             this._binaryApi.forget({
@@ -65,23 +86,6 @@ class RealtimeSubscription extends Subscription {
         super.forget();
     }
 
-    _getProcessTickHistoryClosure(): [IPendingPromise<TicksStreamResponse, void>, (resp: TicksStreamResponse) => void] {
-        const tickHistoryPromise = PendingPromise<TicksStreamResponse, void>();
-        const processTickHistory = (resp: TicksStreamResponse) => {
-            if (this._mainStore.chart.isDestroyed && resp.subscription?.id) {
-                this._binaryApi.forgetStream(resp.subscription?.id);
-                return;
-            }
-            // We assume that 1st response is the history, and subsequent
-            // responses are tick stream data.
-            if (['tick', 'ohlc'].includes(resp.msg_type)) {
-                this._onTick(resp);
-                return;
-            }
-            tickHistoryPromise.resolve(resp);
-        };
-        return [tickHistoryPromise, processTickHistory];
-    }
 
     _onTick(response: TicksStreamResponse) {
         this.lastStreamEpoch = +Subscription.getEpochFromTick(response);

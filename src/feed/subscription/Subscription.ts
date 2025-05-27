@@ -1,4 +1,4 @@
-import { TicksHistoryResponse, TicksStreamResponse } from '@deriv/api-types';
+import { TicksHistoryResponse, TicksStreamResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import { BinaryAPI } from 'src/binaryapi';
 import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
@@ -57,7 +57,7 @@ class Subscription {
         this._emitter.off(Subscription.EVENT_CHART_DATA);
     }
 
-    async _startSubscribe(_request: TCreateTickHistoryParams): Promise<TQuoteResponse> {
+    _startSubscribe(_request: TCreateTickHistoryParams): Promise<TQuoteResponse> {
         throw new Error('Please override!');
     }
 

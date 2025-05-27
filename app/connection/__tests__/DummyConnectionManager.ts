@@ -1,4 +1,4 @@
-import { TicksStreamResponse } from '@deriv/api-types';
+import { TicksStreamResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import sinon from 'sinon';
 import { IPendingPromise, Listener, TBinaryAPIResponse } from 'src/types';

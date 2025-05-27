@@ -5,7 +5,7 @@ import {
     TicksHistoryResponse,
     TickSpotData,
     TicksStreamResponse,
-} from '@deriv/api-types';
+} from 'src/types/api-types';
 import { ArrayElement, OHLCStreamResponse, TBinaryAPIRequest } from 'src/types';
 import ConnectionManager from './ConnectionManager';
 import Stream from './Stream';
@@ -150,7 +150,7 @@ class StreamManager {
         return stream;
     }
 
-    async subscribe(req: TBinaryAPIRequest, callback: (response: TicksHistoryResponse) => void) {
+    subscribe(req: TBinaryAPIRequest, callback: (response: TicksHistoryResponse) => void) {
         const request = (req as unknown) as TicksHistoryRequest;
         const key = this._getKey(request);
         let stream = this._streams[key];
@@ -160,28 +160,37 @@ class StreamManager {
 
         let tickHistoryResponse = this._tickHistoryCache[key];
         if (!tickHistoryResponse) {
-            tickHistoryResponse = await this._tickHistoryPromises[key];
-        }
-
-        const responseStart = ((tickHistoryResponse.echo_req as unknown) as TicksHistoryRequest).start;
-        if (responseStart && request.start && responseStart > request.start) {
-            // request needs more data
-            const patchRequest = { ...request };
-            delete patchRequest.subscribe;
-            const { history, candles } = tickHistoryResponse as Required<TicksHistoryResponse>;
-            patchRequest.end = String(history && history.times?.[0] ? +history.times[0] : candles[0].epoch || '');
-            const patch = (await this._connection.send(patchRequest)) as Required<TicksHistoryResponse>;
-            tickHistoryResponse = mergeTickHistory(tickHistoryResponse, patch);
-        }
-
-        if (tickHistoryResponse.error) {
-            callback(tickHistoryResponse);
+            // If we don't have the tick history in cache yet, we need to wait for it
+            this._tickHistoryPromises[key].then(response => {
+                // Once we have the response, send it to the callback
+                if (response.error) {
+                    callback(response);
+                } else {
+                    // If cache data is available, send a copy otherwise we risk
+                    // mutating the cache outside of StreamManager
+                    callback(StreamManager.cloneTickHistoryResponse(response));
+                }
+            });
         } else {
-            // If cache data is available, send a copy otherwise we risk
-            // mutating the cache outside of StreamManager
-            callback(StreamManager.cloneTickHistoryResponse(tickHistoryResponse));
+            const responseStart = ((tickHistoryResponse.echo_req as unknown) as TicksHistoryRequest).start;
+            if (responseStart && request.start && responseStart > request.start) {
+                // request needs more data
+                const patchRequest = { ...request };
+                delete patchRequest.subscribe;
+                const { history, candles } = tickHistoryResponse as Required<TicksHistoryResponse>;
+                patchRequest.end = String(history && history.times?.[0] ? +history.times[0] : candles[0].epoch || '');
+                this._connection.send(patchRequest).then(patch => {
+                    tickHistoryResponse = mergeTickHistory(tickHistoryResponse, patch as Required<TicksHistoryResponse>);
+                    callback(StreamManager.cloneTickHistoryResponse(tickHistoryResponse));
+                });
+            } else {
+                // If cache data is available, send a copy otherwise we risk
+                // mutating the cache outside of StreamManager
+                callback(StreamManager.cloneTickHistoryResponse(tickHistoryResponse));
+            }
         }
 
+        // Register the callback to receive stream updates
         stream.onStream(callback);
     }
 

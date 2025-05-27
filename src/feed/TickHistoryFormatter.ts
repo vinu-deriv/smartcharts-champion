@@ -1,4 +1,4 @@
-import { TicksHistoryResponse, TicksStreamResponse, ProposalOpenContract } from '@deriv/api-types';
+import { TicksHistoryResponse, TicksStreamResponse, ProposalOpenContract } from 'src/types/api-types';
 import { OHLCStreamResponse, TAllTicks, TQuote } from 'src/types';
 import { getUTCDate, lerp } from '../utils';
 

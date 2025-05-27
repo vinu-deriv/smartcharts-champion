@@ -1,4 +1,4 @@
-import { TicksStreamResponse } from '@deriv/api-types';
+import { TicksStreamResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import { Listener } from 'src/types';
 

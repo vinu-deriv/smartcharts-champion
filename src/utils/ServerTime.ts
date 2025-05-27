@@ -1,4 +1,4 @@
-import { ServerTimeResponse } from '@deriv/api-types';
+import { ServerTimeResponse } from 'src/types/api-types';
 import { BinaryAPI } from 'src/binaryapi';
 import { strToDateTime } from './date';
 import { getUTCEpoch, getLocalDate, getUTCDate } from './index';

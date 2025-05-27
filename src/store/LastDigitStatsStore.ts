@@ -1,4 +1,4 @@
-import { TicksHistoryResponse, TickSpotData, TicksStreamResponse } from '@deriv/api-types';
+import { TicksHistoryResponse, TickSpotData, TicksStreamResponse } from 'src/types/api-types';
 import { action, computed, observable, when, makeObservable } from 'mobx';
 import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
 import Context from 'src/components/ui/Context';

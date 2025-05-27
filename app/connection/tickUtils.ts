@@ -1,4 +1,4 @@
-import { Candles, History, TicksHistoryResponse } from '@deriv/api-types';
+import { Candles, History, TicksHistoryResponse } from 'src/types/api-types';
 import { ArrayElement } from 'src/types';
 
 function getLast<T>(arr: T[]) {

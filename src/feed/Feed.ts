@@ -1,4 +1,4 @@
-import { TicksHistoryRequest, TicksHistoryResponse, ProposalOpenContract } from '@deriv/api-types';
+import { TicksHistoryRequest, TicksHistoryResponse, ProposalOpenContract } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import { reaction } from 'mobx';
 import { BinaryAPI, TradingTimes } from 'src/binaryapi';
@@ -95,6 +95,7 @@ class Feed {
     unsubscribe({ symbol, granularity }: { symbol: string; granularity: TGranularity }) {
         // the chart forgets the ticks_history of the main chart symbol before sending a new request in fetchInitialData function.
         const key = this._getKey({ symbol, granularity });
+        debugger;
         this._forgetStream(key);
     }
     _forgetStream(key: string) {
@@ -145,16 +146,16 @@ class Feed {
 
         if (index < 0) {
             return this.quotes[0];
-        } else if (index > this.quotes.length - 1) {
+        } if (index > this.quotes.length - 1) {
             return this.quotes[this.quotes.length - 1];
-        } else {
+        } 
             const leftTick = this.quotes[Math.floor(index)];
             const rightTick = this.quotes[Math.ceil(index)];
 
             const distanceToLeft = epoch - leftTick.DT!.getTime();
             const distanceToRight = rightTick.DT!.getTime() - epoch;
             return distanceToLeft <= distanceToRight ? leftTick : rightTick;
-        }
+        
     }
 
     getClosestQuoteIndexForEpoch(epoch: number) {
@@ -162,16 +163,16 @@ class Feed {
 
         if (index < 0) {
             return this.quotes[0];
-        } else if (index > this.quotes.length - 1) {
+        } if (index > this.quotes.length - 1) {
             return this.quotes[this.quotes.length - 1];
-        } else {
+        } 
             const leftTick = this.quotes[Math.floor(index)];
             const rightTick = this.quotes[Math.ceil(index)];
 
             const distanceToLeft = epoch - leftTick.DT!.getTime();
             const distanceToRight = rightTick.DT!.getTime() - epoch;
             return distanceToLeft <= distanceToRight ? Math.floor(index) : Math.ceil(index);
-        }
+        
     }
 
     findEpochIndex(epoch: number): number {
@@ -195,11 +196,11 @@ class Feed {
 
         if (left >= 0 && epoch == this.quotes[left].DT?.getTime()) {
             return left;
-        } else if (right < this.quotes.length && epoch == this.quotes[right].DT?.getTime()) {
+        } if (right < this.quotes.length && epoch == this.quotes[right].DT?.getTime()) {
             return right;
-        } else {
+        } 
             return (left + right) / 2;
-        }
+        
     }
 
     getQuotesInterval() {
@@ -224,9 +225,9 @@ class Feed {
         this.tickQueue = [];
         this.setHasReachedEndOfData(false);
         this.paginationLoader.updateOnPagination(true);
-        const { granularity, symbolObject } = params;
+        const { granularity = 0, symbolObject } = params;
         const key = this._getKey({ symbol, granularity });
-        let start = this.margin && this.startEpoch ? this.startEpoch - this.margin : this.startEpoch;
+        const start = this.margin && this.startEpoch ? this.startEpoch - this.margin : this.startEpoch;
         const end = this.margin && this.endEpoch ? this.endEpoch + this.margin : this.endEpoch;
 
         const symbolName = symbolObject.name;
@@ -243,6 +244,16 @@ class Feed {
             callback(dataCallback);
             return;
         }
+
+        // Check if we already have quotes from masterData in chartData
+        if (this.quotes && this.quotes.length > 0 && !this.shouldFetchTickHistory) {
+            const quotes = this._trimQuotes(this.quotes);
+            callback({ quotes });
+            this._emitDataUpdate(quotes, true);
+            this.paginationLoader.updateOnPagination(false);
+            return;
+        }
+
         const tickHistoryRequest: Partial<TCreateTickHistoryParams> = {
             symbol,
             granularity: granularity as TicksHistoryRequest['granularity'],
@@ -315,7 +326,16 @@ class Feed {
             getHistoryOnly = true;
         }
         if (getHistoryOnly) {
-            if (this.shouldFetchTickHistory || !(this.contractInfo as ProposalOpenContract).tick_stream) {
+            if (this._mainStore.state.getTickHistory) {
+                // Use getTickHistory prop to get tick history data
+                quotes = await this._mainStore.state.getTickHistory({
+                    symbol,
+                    granularity: granularity as number,
+                    count: this.endEpoch ? 1000 : this._mainStore.lastDigitStats.count,
+                    start,
+                    end,
+                });
+            } else if (this.shouldFetchTickHistory || !(this.contractInfo as ProposalOpenContract).tick_stream) {
                 const response: TicksHistoryResponse = await this._binaryApi.getTickHistory(
                     tickHistoryRequest as TCreateTickHistoryParams
                 );

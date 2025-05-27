@@ -1,4 +1,4 @@
-import { SubscriptionInformation, TicksHistoryRequest, ActiveSymbols } from '@deriv/api-types';
+import { SubscriptionInformation, TicksHistoryRequest, ActiveSymbols } from './api-types';
 
 export type OHLCStreamResponse = {
     ohlc: {

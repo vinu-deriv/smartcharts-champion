@@ -1,4 +1,4 @@
-import { TicksHistoryResponse } from '@deriv/api-types';
+import { TicksHistoryResponse } from 'src/types/api-types';
 import { TMainStore } from 'src/types';
 import { BinaryAPI } from 'src/binaryapi';
 import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';

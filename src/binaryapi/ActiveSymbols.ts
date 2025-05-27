@@ -1,4 +1,4 @@
-import { ActiveSymbols as TActiveSymbols, ActiveSymbolsResponse } from '@deriv/api-types';
+import { ActiveSymbols as TActiveSymbols, ActiveSymbolsResponse } from 'src/types/api-types';
 import { action, computed, observable, runInAction, makeObservable } from 'mobx';
 import { TChanges, TChartProps, TInitialChartData } from 'src/types';
 import BinaryAPI from './BinaryAPI';

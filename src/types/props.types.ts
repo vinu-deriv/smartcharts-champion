@@ -4,7 +4,7 @@ import {
     TradingTimesResponse,
     AuditDetailsForExpiredContract,
     ProposalOpenContract,
-} from '@deriv/api-types';
+} from 'src/types/api-types';
 
 import { TActiveDrawingToolItem, TDrawingCreatedConfig } from 'src/store/DrawToolsStore';
 import { HtmlHTMLAttributes } from 'react';
@@ -80,6 +80,9 @@ export type TBinaryAPIResponse = {
     };
     req_id?: number;
     msg_type: any;
+    active_symbols?: ActiveSymbols;
+    trading_times?: TradingTimesResponse['trading_times'];
+    time?: number;
     [key: string]: unknown;
 };
 
@@ -88,6 +91,8 @@ export type TResponseAPICallback = (response: TBinaryAPIResponse) => void;
 export type TRequestSubscribe = (request: TBinaryAPIRequest, callback: TResponseAPICallback) => void;
 export type TRequestForgetStream = (id: string) => void;
 export type TRequestForget = (request: TBinaryAPIRequest, callback: TResponseAPICallback) => void;
+export type TGetTickHistory = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number }) => Promise<TQuote[]>;
+export type TGetQuotes = (params: { symbol: string, granularity: TGranularity}, callback: (quote: TQuote) => void) => (() => void);
 export type TNetworkConfig = {
     class: string;
     tooltip: string;
@@ -186,6 +191,8 @@ export type TChartProps = {
     requestSubscribe: BinaryAPI['requestSubscribe'];
     requestForget: BinaryAPI['requestForget'];
     requestForgetStream?: BinaryAPI['requestForgetStream'];
+    getTickHistory?: TGetTickHistory;
+    getQuotes?: TGetQuotes;
     id?: string;
     getMarketsOrder?: (active_symbols: ActiveSymbols) => string[];
     getIndicatorHeightRatio?: TGetIndicatorHeightRatio;
@@ -218,7 +225,7 @@ export type TChartProps = {
     shouldFetchTradingTimes?: boolean;
     shouldFetchTickHistory?: boolean;
     allowTickChartTypeOnly?: boolean;
-    allTicks?: keyof AuditDetailsForExpiredContract | [];
+    allTicks?: NonNullable<AuditDetailsForExpiredContract>['all_ticks'];
     contractInfo?: ProposalOpenContract;
     maxTick?: number | null;
     crosshairTooltipLeftAllow?: number | null;
@@ -489,7 +496,7 @@ export type TLayout = {
     msPerPx?: number;
 };
 
-export type TAllTicks = Exclude<AuditDetailsForExpiredContract, null>['all_ticks'];
+export type TAllTicks = NonNullable<AuditDetailsForExpiredContract>['all_ticks'];
 
 export type TSettingsParameterType =
     | 'colorpicker'

@@ -1,4 +1,4 @@
-import { TicksHistoryResponse, TicksStreamResponse } from '@deriv/api-types';
+import { TicksHistoryResponse, TicksStreamResponse } from 'src/types/api-types';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { OHLCStreamResponse } from 'src/types';
