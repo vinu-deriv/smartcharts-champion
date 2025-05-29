@@ -23,6 +23,7 @@ import {
     getYAxisScalingParams,
 } from '../utils';
 import ChartStore from './ChartStore';
+import { processSymbols, categorizeActiveSymbols } from '../types/active-symbols.types';
 
 type TStateChangeOption = {
     indicator_type_name?: string;
@@ -223,7 +224,17 @@ class ChartState {
             JSON.stringify(chartData.activeSymbols) !== this.activeSymbols
         ) {
             this.activeSymbols = JSON.stringify(chartData.activeSymbols);
-            this.mainStore.chart.activeSymbols?.computeActiveSymbols(chartData.activeSymbols);
+            // Process active symbols directly
+            if (this.mainStore.chart.processedSymbols) {
+                this.mainStore.chart.processedSymbols = processSymbols(chartData.activeSymbols);
+                this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(this.mainStore.chart.processedSymbols);
+                
+                // Create symbol map for quick lookup
+                this.mainStore.chart.symbolMap = {};
+                for (const symbolObj of this.mainStore.chart.processedSymbols) {
+                    this.mainStore.chart.symbolMap[symbolObj.symbol] = symbolObj;
+                }
+            }
         }
 
         if (
@@ -280,6 +291,12 @@ class ChartState {
             this.symbol = symbol;
             isSymbolChanged = true;
 
+            // When symbol changes, we need to ensure trading times are updated
+            if (chartData?.tradingTimes && typeof chartData.tradingTimes === 'object') {
+                this.mainStore.chart.tradingTimes?._calculatingTradingTime(chartData.tradingTimes);
+                this.tradingTimes = JSON.stringify(chartData.tradingTimes);
+            }
+
             this.mainStore.chartTitle.hidePrice();
         }
 
@@ -294,11 +311,19 @@ class ChartState {
             isGranularityChanged = true;
         }
 
-        if (this.chartStore.activeSymbols && refreshActiveSymbols !== this.refreshActiveSymbols) {
+        if (refreshActiveSymbols !== this.refreshActiveSymbols) {
             this.refreshActiveSymbols = refreshActiveSymbols;
 
-            if (this.refreshActiveSymbols) {
-                this.chartStore.activeSymbols.retrieveActiveSymbols(this.refreshActiveSymbols);
+            // If refreshActiveSymbols is true and we have chartData with activeSymbols, reprocess them
+            if (this.refreshActiveSymbols && chartData?.activeSymbols) {
+                this.mainStore.chart.processedSymbols = processSymbols(chartData.activeSymbols);
+                this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(this.mainStore.chart.processedSymbols);
+                
+                // Create symbol map for quick lookup
+                this.mainStore.chart.symbolMap = {};
+                for (const symbolObj of this.mainStore.chart.processedSymbols) {
+                    this.mainStore.chart.symbolMap[symbolObj.symbol] = symbolObj;
+                }
             }
         }
 

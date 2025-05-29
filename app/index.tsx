@@ -15,6 +15,7 @@ import {
     ToolbarWidget,
     Views,
 } from '@deriv-com/smartcharts'; // eslint-disable-line import/no-unresolved
+import { hardcodedActiveSymbols } from 'src/binaryapi/hardcoded-active-symbols';
 import whyDidYouRender from '@welldone-software/why-did-you-render';
 import { configure } from 'mobx';
 import moment from 'moment';
@@ -22,7 +23,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { TNotification } from 'src/store/Notifier';
 import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener } from 'src/types';
-import { AuditDetailsForExpiredContract, ProposalOpenContract, TradingTimesResponse } from 'src/types/api-types';
+import { AuditDetailsForExpiredContract, ProposalOpenContract, TradingTimesResponse, TicksHistoryResponse } from 'src/types/api-types';
 import 'url-search-params-polyfill';
 import './app.scss';
 import ChartHistory from './ChartHistory';
@@ -182,9 +183,7 @@ const createDummyData = (type: 'tick' | 'candle' = 'tick'): TicksHistoryResponse
     };
 };
 
-const dummyMasterData = createDummyData();
-
-const getTickHistory = ({ symbol, granularity, count, start, end, style }: { symbol: string; granularity: number; count: number; start?: number; end?: number, style?: string  }): Promise<any> => {
+const getTickHistory = ({ symbol, granularity, count, start, end, style }: { symbol: string; granularity: number; count: number; start?: number; end?: number, style?: string  }): any => {
     console.log('getTickHistory called with', { symbol, granularity, count, start, end, style });
     
     // Determine whether to return tick or candle data based on style parameter
@@ -301,7 +300,6 @@ const getQuotes = ({ symbol, granularity, style }: { symbol: string; granularity
     return cleanupFunction;
 };
 const requestAPI = connectionManager.send.bind(connectionManager);
-const requestSubscribe = streamManager.subscribe.bind(streamManager);
 
 // Modified requestForget to also cancel the getQuotes interval
 const requestForget = (request: any, callback: any) => {
@@ -322,7 +320,6 @@ const requestForget = (request: any, callback: any) => {
 const App = () => {
     const startingLanguageRef = React.useRef('en');
     const [tradingTimes, setTradingTimes] = React.useState<TradingTimesResponse['trading_times'] | undefined>(undefined);
-    const [masterData, setMasterData] = React.useState<TQuote[] | undefined>(undefined);
 
     React.useEffect(() => {
         tradingTimesPromise.then(response => {
@@ -330,9 +327,6 @@ const App = () => {
                 setTradingTimes(response.trading_times);
             }
         });
-
-        // Use dummy data instead of fetching from API
-        setMasterData(dummyMasterData);
     }, []);
 
     const [notifier] = React.useState(new ChartNotifier());
@@ -440,6 +434,15 @@ const App = () => {
         const symbolChange = (new_symbol: string) => {
             logEvent(LogCategories.ChartTitle, LogActions.MarketSelector, new_symbol);
             notifier.removeByCategory('activesymbol');
+            
+            // Fetch new trading times when symbol changes
+            connectionManager.send({ trading_times: 'today' }).then(response => {
+                if (response.trading_times) {
+                    
+                    setTradingTimes(response.trading_times);
+                }
+            });
+            
             setSymbol(new_symbol);
         };
         return (
@@ -492,7 +495,6 @@ const App = () => {
             toolbarWidget={renderToolbarWidget}
             chartControlsWidgets={renderControls}
             requestAPI={requestAPI}
-            requestSubscribe={requestSubscribe}
             requestForget={requestForget}
             endEpoch={endEpoch}
             chartType={chartType}
@@ -506,6 +508,11 @@ const App = () => {
             enabledChartFooter
             allTicks={allTicks}
             contractInfo={contractInfo}
+            feedCall={{ activeSymbols: false, tradingTimes: true }}
+            initialData={{ 
+                activeSymbols: hardcodedActiveSymbols,
+                tradingTimes,
+            }}
             chartData={{ tradingTimes }}
             getTickHistory={getTickHistory}
             getQuotes={getQuotes}

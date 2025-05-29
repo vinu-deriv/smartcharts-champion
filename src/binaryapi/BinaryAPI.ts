@@ -13,7 +13,6 @@ import {
     TRequestAPI,
     TRequestForget,
     TRequestForgetStream,
-    TRequestSubscribe,
     TResponseAPICallback,
 } from 'src/types';
 
@@ -26,7 +25,6 @@ export default class BinaryAPI {
     requestAPI: TRequestAPI;
     requestForget: TRequestForget;
     requestForgetStream?: TRequestForgetStream;
-    requestSubscribe: TRequestSubscribe;
     _getTickHistory: TGetTickHistory;
     _getQuotes: TGetQuotes;
     static get DEFAULT_COUNT() {
@@ -37,14 +35,12 @@ export default class BinaryAPI {
 
     constructor(
         requestAPI: TRequestAPI,
-        requestSubscribe: TRequestSubscribe,
         requestForget: TRequestForget,
         getTickHistory:TGetTickHistory,
         getQuotes: TGetQuotes,
         requestForgetStream?: TRequestForgetStream
     ) {
         this.requestAPI = requestAPI;
-        this.requestSubscribe = requestSubscribe;
         this.requestForget = requestForget;
         this.requestForgetStream = requestForgetStream;
         this._getTickHistory = getTickHistory;
@@ -112,7 +108,6 @@ export default class BinaryAPI {
  }, callback);
     }
     forget(params: { symbol: string; granularity: TGranularity }) {
-        debugger;
         const key = this._getKey(params as TCreateTickHistoryParams);
         if (!this.streamRequests[key]) return;
         const { request, callback } = this.streamRequests[key];
@@ -120,7 +115,6 @@ export default class BinaryAPI {
         return this.requestForget(request, callback);
     }
     forgetStream(subscription_id: string) {
-        debugger
         if (this.requestForgetStream && typeof this.requestForgetStream === 'function') {
             return this.requestForgetStream(subscription_id);
         }

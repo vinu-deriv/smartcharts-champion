@@ -73,7 +73,6 @@ class RealtimeSubscription extends Subscription {
     }
 
     forget() {
-        debugger;
         if (this._tickCallback) {
             const { symbol, granularity } = this._request;
             this._binaryApi.forget({

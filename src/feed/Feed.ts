@@ -95,7 +95,6 @@ class Feed {
     unsubscribe({ symbol, granularity }: { symbol: string; granularity: TGranularity }) {
         // the chart forgets the ticks_history of the main chart symbol before sending a new request in fetchInitialData function.
         const key = this._getKey({ symbol, granularity });
-        debugger;
         this._forgetStream(key);
     }
     _forgetStream(key: string) {
