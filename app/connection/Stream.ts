@@ -1,6 +1,5 @@
-import { TicksStreamResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
-import { Listener } from 'src/types';
+import { Listener, TQuote } from 'src/types';
 
 export default class Stream extends EventEmitter {
     _emitter?: EventEmitter;
@@ -22,7 +21,7 @@ export default class Stream extends EventEmitter {
         this._emitter?.emit(Stream.EVENT_NO_SUBSCRIBER);
     }
 
-    emitTick(data: TicksStreamResponse) {
+    emitTick(data: TQuote) {
         this.emit(Stream.EVENT_STREAM, data);
     }
 
@@ -41,7 +40,7 @@ export default class Stream extends EventEmitter {
 
     offStream(callback: Listener) {
         this.subscriberCount--;
-        this.on(Stream.EVENT_STREAM, callback);
+        this.off(Stream.EVENT_STREAM, callback);
         if (this.subscriberCount === 0) {
             this.emit(Stream.EVENT_NO_SUBSCRIBER);
         }

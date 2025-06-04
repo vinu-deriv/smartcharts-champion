@@ -1,5 +1,5 @@
-import { Candles, History, TicksHistoryResponse } from 'src/types/api-types';
-import { ArrayElement } from 'src/types';
+import { Candles, History } from 'src/types/api-types';
+import { ArrayElement, TgetTicksHistoryResult } from 'src/types';
 
 function getLast<T>(arr: T[]) {
     return arr[arr.length - 1];
@@ -90,10 +90,10 @@ function mergeCandles(master: Required<Candles>, patch: Required<Candles>) {
     return alpha.slice(0, alphaEnd).concat(omega.slice(omegaStart, omega.length));
 }
 
-export function mergeTickHistory(master: Required<TicksHistoryResponse>, patch: Required<TicksHistoryResponse>) {
+export function mergeTickHistory(master: Required<TgetTicksHistoryResult>, patch: Required<TgetTicksHistoryResult>) {
     const merged = { ...master };
     if (master.candles) {
-        merged.candles = mergeCandles(master.candles as Required<Candles>, patch.candles as Required<Candles>);
+        merged.candles = mergeCandles(master.candles as Required<Candles>, patch.candles as Required<Candles>) as Required<TgetTicksHistoryResult>['candles'];
     } else {
         merged.history = mergeTicks(master.history as Required<History>, patch.history as Required<History>);
     }

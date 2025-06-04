@@ -7,8 +7,8 @@ export type SubscriptionInformation = {
     id: string;
 };
 
-export type TicksHistoryRequest = {
-    ticks_history: string;
+export type HistoryRequest = {
+    symbol: string;
     adjust_start_time?: number;
     count?: string | number;
     end?: string;
@@ -22,7 +22,7 @@ export type ActiveSymbols = Array<{
     allow_forward_starting?: 0 | 1;
     delay_amount?: number;
     display_name: string;
-    display_order: number;
+    display_order?: number;
     exchange_is_open: 0 | 1;
     exchange_name?: string;
     is_trading_suspended: 0 | 1;
@@ -53,13 +53,8 @@ export type Candles = Array<{
 
 export type TicksHistoryResponse = {
     candles?: Candles;
-    echo_req: {
-        [key: string]: any;
-    };
     history?: History;
-    msg_type: "candles" | "tick" | "ohlc" | "history";
     pip_size?: number;
-    req_id?: number;
     status?: string;
     error?: {
         code: string;
@@ -78,12 +73,6 @@ export type TickSpotData = {
 };
 
 export type TicksStreamResponse = {
-    echo_req: {
-        [key: string]: any;
-    };
-    msg_type: "tick";
-    req_id?: number;
-    subscription?: SubscriptionInformation;
     tick?: TickSpotData;
 };
 
@@ -185,32 +174,13 @@ export type AuditDetailsForExpiredContract = {
 
 export type ActiveSymbolsResponse = {
     active_symbols: ActiveSymbols;
-    echo_req?: {
-        [key: string]: any;
-    };
-    msg_type?: string;
-    req_id?: number;
-};
+}
 
-export type ServerTimeResponse = {
-    echo_req?: {
-        [key: string]: any;
-    };
-    msg_type?: string;
-    req_id?: number;
+export type TServerTime = {
     time: number;
-    error?: {
-        code: string;
-        message: string;
-    };
 };
 
 export type TradingTimesResponse = {
-    echo_req?: {
-        [key: string]: any;
-    };
-    msg_type?: string;
-    req_id?: number;
     trading_times?: {
         markets: Array<{
             name?: string;
@@ -242,14 +212,35 @@ export type TradingTimesResponse = {
 };
 
 export type PingResponse = {
-    echo_req?: {
-        [key: string]: any;
-    };
-    msg_type?: string;
     ping?: string;
     req_id?: number;
     error?: {
         code: string;
         message: string;
     };
+};
+
+
+
+export type OHLCStreamResponse = {
+    ohlc: {
+        close: string;
+        epoch: number;
+        granularity: HistoryRequest['granularity'];
+        high: string;
+        id: string;
+        low: string;
+        open: string;
+        open_time: number;
+        symbol: string;
+    };
+};
+
+
+export type TGranularity = 0 | HistoryRequest['granularity'];
+
+
+export type TError = {
+    code?: string;
+    message?: string;
 };

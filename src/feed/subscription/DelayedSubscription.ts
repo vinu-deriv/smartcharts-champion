@@ -1,14 +1,13 @@
-import { TicksHistoryResponse } from 'src/types/api-types';
-import { TMainStore } from 'src/types';
+import { TgetTicksHistoryResult, TMainStore } from 'src/types';
 import { BinaryAPI } from 'src/binaryapi';
-import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
+import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
 import Subscription from './Subscription';
 
 class DelayedSubscription extends Subscription {
     _timerId?: ReturnType<typeof setInterval>;
     UPDATE_INTERVAL = 3000;
 
-    constructor(request: TCreateTickHistoryParams, api: BinaryAPI, delay: number, mainStore: TMainStore) {
+    constructor(request: TCreateHistoryParams, api: BinaryAPI, delay: number, mainStore: TMainStore) {
         super(request, api, mainStore);
         this._request = {
             ...this._request,
@@ -22,9 +21,9 @@ class DelayedSubscription extends Subscription {
         this._endTimer();
     }
 
-    async _startSubscribe(tickHistoryRequest: TCreateTickHistoryParams) {
-        const response: TicksHistoryResponse = await this._binaryApi.getTickHistory(tickHistoryRequest);
-        const quotes = this._processHistoryResponse(response);
+    async _startSubscribe(tickHistoryRequest: TCreateHistoryParams) {
+        const response: TgetTicksHistoryResult = await this._binaryApi.getTicksHistory(tickHistoryRequest);
+        const quotes = this._processTicksHistoryResponse(response);
         this._startTimer();
         return { quotes, response };
     }
@@ -56,8 +55,8 @@ class DelayedSubscription extends Subscription {
                 // start time to be offset by the delayed amount:
                 adjust_start_time: 0,
             };
-            const response = await this._binaryApi.getTickHistory(tickHistoryRequest as TCreateTickHistoryParams);
-            const quotes = this._processHistoryResponse(response);
+            const response = await this._binaryApi.getTicksHistory(tickHistoryRequest as TCreateHistoryParams);
+            const quotes = this._processTicksHistoryResponse(response);
             this._emitter?.emit(Subscription.EVENT_CHART_DATA, quotes);
         } else {
             console.error('Unable to update delayed feed without epoch from last tick');

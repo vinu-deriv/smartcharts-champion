@@ -1,3 +1,4 @@
+import ChartAdapterStore from 'src/store/ChartAdapterStore';
 import BottomWidgetsContainerStore from '../store/BottomWidgetsContainerStore';
 import TimeperiodStore from '../store/TimeperiodStore';
 import ChartStore from '../store/ChartStore';
@@ -22,7 +23,6 @@ import HighestLowestStore from '../store/HighestLowestStore';
 import PaginationLoaderStore from '../store/PaginationLoaderStore';
 import ToolbarWidgetStore from '../store/ToolbarWidgetStore';
 import ScrollStore from '../store/ScrollStore';
-import ChartAdapterStore from 'src/store/ChartAdapterStore';
 
 export type TMainStore = {
     notifier: Notifier;

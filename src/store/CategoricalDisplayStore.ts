@@ -2,13 +2,13 @@ import { action, computed, observable, reaction, makeObservable, toJS } from 'mo
 import React from 'react';
 import { STATE } from 'src/Constant';
 import MainStore from '.';
+import { TProcessedSymbolItem } from '../types/active-symbols.types';
 import {
     TCategorizedSymbolItem,
     TCategorizedSymbols,
-    TProcessedSymbolItem,
     TSubCategory,
     TSubCategoryDataItem,
-} from '../binaryapi/ActiveSymbols';
+} from '../types/categorical-display.types';
 import Context from '../components/ui/Context';
 import { cloneCategories } from '../utils';
 

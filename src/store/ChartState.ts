@@ -4,7 +4,7 @@ import {
     TChartControlsWidgets,
     TChartProps,
     TGetIndicatorHeightRatio,
-    TGetTickHistory,
+    TgetTicksHistory,
     TGranularity,
     TLayout,
     TSettings,
@@ -83,7 +83,7 @@ class ChartState {
     tradingTimes: string | null = null;
     activeSymbols: string | null = null;
     masterData: string | null = null;
-    getTickHistory?: TGetTickHistory;
+    getTicksHistory?: TgetTicksHistory;
     chartControlsWidgets?: TChartControlsWidgets;
     enabledChartFooter?: boolean;
 
@@ -172,7 +172,6 @@ class ChartState {
         shouldDrawTicksFromContractInfo,
         stateChangeListener,
         getIndicatorHeightRatio,
-        getTickHistory,
         chartType,
         clearChart,
         endEpoch,

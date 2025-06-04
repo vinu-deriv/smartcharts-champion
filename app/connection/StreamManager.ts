@@ -1,7 +1,7 @@
 import {
     Candles,
     History,
-    TicksHistoryRequest,
+    HistoryRequest,
     TicksHistoryResponse,
     TickSpotData,
     TicksStreamResponse,
@@ -30,13 +30,13 @@ class StreamManager {
     }
 
     _onTick(data: TicksStreamResponse) {
-        const key = this._getKey((data.echo_req as unknown) as TicksHistoryRequest);
+        const key = this._getKey((data.echo_req as unknown) as HistoryRequest);
 
         if (this._streams[key] && this._tickHistoryCache[key]) {
             this._streamIds[key] = data[data.msg_type]?.id;
             this._cacheTick(key, data);
             this._streams[key].emitTick(data);
-        } else if (this._beingForgotten[key] === undefined) {
+        } else if (!(key in this._beingForgotten)) {
             // There could be the possibility a stream could still enter even though
             // it is no longer in used. This is because we can't know the stream ID
             // from the initial response; we have to wait for the next tick to retrieve it.
@@ -58,8 +58,8 @@ class StreamManager {
     }
 
     _onReceiveTickHistory(data: Required<TicksHistoryResponse>) {
-        const key = this._getKey((data.echo_req as unknown) as TicksHistoryRequest);
-        const cache = StreamManager.cloneTickHistoryResponse(data);
+        const key = this._getKey((data.echo_req as unknown) as HistoryRequest);
+        const cache = StreamManager.cloneTickTicksHistoryResponse(data);
         if (cache) {
             this._tickHistoryCache[key] = cache;
         }
@@ -127,16 +127,16 @@ class StreamManager {
         }
     }
 
-    _createNewStream(request: TicksHistoryRequest) {
+    _createNewStream(request: HistoryRequest) {
         const key = this._getKey(request);
         const stream = new Stream();
         this._streams[key] = stream;
         const subscribePromise = this._connection.send((request as unknown) as TBinaryAPIRequest);
-        this._tickHistoryPromises[key] = subscribePromise as Promise<Required<TicksHistoryResponse>>;
+        this._tickHistoryPromises[key] = subscribePromise as unknown as Promise<Required<TicksHistoryResponse>>;
 
         subscribePromise
             .then(response => {
-                this._onReceiveTickHistory(response as Required<TicksHistoryResponse>);
+                this._onReceiveTickHistory(response as unknown as Required<TicksHistoryResponse>);
                 if (response.error) {
                     this._forgetStream(key);
                 }
@@ -151,15 +151,15 @@ class StreamManager {
     }
 
     subscribe(req: TBinaryAPIRequest, callback: (response: TicksHistoryResponse) => void) {
-        const request = (req as unknown) as TicksHistoryRequest;
+        const request = (req as unknown) as HistoryRequest;
         const key = this._getKey(request);
         let stream = this._streams[key];
         if (!stream) {
             stream = this._createNewStream(request);
         }
 
-        let tickHistoryResponse = this._tickHistoryCache[key];
-        if (!tickHistoryResponse) {
+        let tickTicksHistoryResponse = this._tickHistoryCache[key];
+        if (!tickTicksHistoryResponse) {
             // If we don't have the tick history in cache yet, we need to wait for it
             this._tickHistoryPromises[key].then(response => {
                 // Once we have the response, send it to the callback
@@ -168,25 +168,25 @@ class StreamManager {
                 } else {
                     // If cache data is available, send a copy otherwise we risk
                     // mutating the cache outside of StreamManager
-                    callback(StreamManager.cloneTickHistoryResponse(response));
+                    callback(StreamManager.cloneTickTicksHistoryResponse(response));
                 }
             });
         } else {
-            const responseStart = ((tickHistoryResponse.echo_req as unknown) as TicksHistoryRequest).start;
+            const responseStart = ((tickTicksHistoryResponse.echo_req as unknown) as HistoryRequest).start;
             if (responseStart && request.start && responseStart > request.start) {
                 // request needs more data
                 const patchRequest = { ...request };
                 delete patchRequest.subscribe;
-                const { history, candles } = tickHistoryResponse as Required<TicksHistoryResponse>;
+                const { history, candles } = tickTicksHistoryResponse as Required<TicksHistoryResponse>;
                 patchRequest.end = String(history && history.times?.[0] ? +history.times[0] : candles[0].epoch || '');
-                this._connection.send(patchRequest).then(patch => {
-                    tickHistoryResponse = mergeTickHistory(tickHistoryResponse, patch as Required<TicksHistoryResponse>);
-                    callback(StreamManager.cloneTickHistoryResponse(tickHistoryResponse));
+                this._connection.send(patchRequest).then((patch) => {
+                    tickTicksHistoryResponse = mergeTickHistory(tickTicksHistoryResponse, patch as unknown as Required<TicksHistoryResponse>);
+                    callback(StreamManager.cloneTickTicksHistoryResponse(tickTicksHistoryResponse));
                 });
             } else {
                 // If cache data is available, send a copy otherwise we risk
                 // mutating the cache outside of StreamManager
-                callback(StreamManager.cloneTickHistoryResponse(tickHistoryResponse));
+                callback(StreamManager.cloneTickTicksHistoryResponse(tickTicksHistoryResponse));
             }
         }
 
@@ -195,18 +195,18 @@ class StreamManager {
     }
 
     forget(request: TBinaryAPIRequest, callback: (response: TicksHistoryResponse) => void) {
-        const key = this._getKey((request as unknown) as TicksHistoryRequest);
+        const key = this._getKey((request as unknown) as HistoryRequest);
         const stream = this._streams[key];
         if (stream) {
             stream.offStream(callback);
         }
     }
 
-    _getKey({ ticks_history: symbol, granularity }: TicksHistoryRequest) {
+    _getKey({ symbol, granularity }: HistoryRequest) {
         return `${symbol}-${granularity || 0}`;
     }
 
-    static cloneTickHistoryResponse({ history, candles, ...others }: Required<TicksHistoryResponse>) {
+    static cloneTickTicksHistoryResponse({ history, candles, ...others }: Required<TicksHistoryResponse>) {
         let clone: TicksHistoryResponse | null = null;
 
         if (history) {

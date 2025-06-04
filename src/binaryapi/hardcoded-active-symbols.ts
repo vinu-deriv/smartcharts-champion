@@ -2,7 +2,6 @@ import { ActiveSymbols as TActiveSymbols } from 'src/types/api-types';
 
 export const hardcodedActiveSymbols: TActiveSymbols = [
   {
-    "allow_forward_starting": 0,
     "display_name": "AUD Basket",
     "display_order": 30,
     "exchange_is_open": 1,
@@ -21,7 +20,7 @@ export const hardcodedActiveSymbols: TActiveSymbols = [
     "allow_forward_starting": 1,
     "display_name": "AUD/CAD",
     "display_order": 10,
-    "exchange_is_open": 1,
+    "exchange_is_open": 0,
     "is_trading_suspended": 0,
     "market": "forex",
     "market_display_name": "Forex",

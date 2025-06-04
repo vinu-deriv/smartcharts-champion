@@ -1,16 +1,15 @@
-import { TicksHistoryResponse, TicksStreamResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import { BinaryAPI } from 'src/binaryapi';
-import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
-import { Listener, OHLCStreamResponse, TMainStore, TQuote } from 'src/types';
+import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
+import { Listener, TgetTicksHistoryResult, TMainStore, TQuote } from 'src/types';
 import { TickHistoryFormatter } from '../TickHistoryFormatter';
 
-export type TQuoteResponse = { quotes: TQuote[]; response: TicksHistoryResponse; error?: unknown };
+export type TQuoteResponse = { quotes: TQuote[]; response: TgetTicksHistoryResult; error?: unknown };
 
 class Subscription {
     _binaryApi: BinaryAPI;
     _emitter: EventEmitter;
-    _request: TCreateTickHistoryParams;
+    _request: TCreateHistoryParams;
     lastStreamEpoch?: number;
     _mainStore: TMainStore;
     static get EVENT_CHART_DATA() {
@@ -23,7 +22,7 @@ class Subscription {
         return this._mainStore.state.shouldFetchTickHistory || false;
     }
 
-    constructor(request: TCreateTickHistoryParams, api: BinaryAPI, mainStore: TMainStore) {
+    constructor(request: TCreateHistoryParams, api: BinaryAPI, mainStore: TMainStore) {
         this._binaryApi = api;
         this._request = request;
         this._emitter = new EventEmitter({ emitDelay: 0 });
@@ -57,14 +56,11 @@ class Subscription {
         this._emitter.off(Subscription.EVENT_CHART_DATA);
     }
 
-    _startSubscribe(_request: TCreateTickHistoryParams): Promise<TQuoteResponse> {
+    _startSubscribe(_request: TCreateHistoryParams): Promise<TQuoteResponse> {
         throw new Error('Please override!');
     }
 
-    _processHistoryResponse(response: TicksHistoryResponse) {
-        if (response.error) {
-            throw response.error;
-        }
+    _processTicksHistoryResponse(response: TgetTicksHistoryResult) {
 
         const quotes = TickHistoryFormatter.formatHistory(response);
 
@@ -82,22 +78,24 @@ class Subscription {
         this._emitter.on(Subscription.EVENT_CHART_DATA, callback);
     }
 
-    static getLatestEpoch({ candles, history }: TicksHistoryResponse) {
+    static getLatestEpoch({ candles, history }: TgetTicksHistoryResult) {
         if (candles) {
-            return candles[candles.length - 1].epoch;
+            return candles[candles.length - 1].epoch as number;
         }
 
         if (history) {
             const { times = [] } = history;
             return times[times.length - 1];
         }
+        
+        return undefined;
     }
 
-    static getEpochFromTick(response: TicksStreamResponse | OHLCStreamResponse) {
+    static getEpochFromTick(response: TQuote) {
         if ('tick' in response && response.tick) {
             return response.tick.epoch as number;
         }
-        return (response as OHLCStreamResponse).ohlc.open_time;
+        return (response as TQuote).ohlc?.open_time;
     }
 }
 

@@ -6,12 +6,13 @@ import MainStore from '.';
 import { BinaryAPI, TradingTimes } from '../binaryapi';
 import { 
     TProcessedSymbolItem, 
-    TSubCategoryDataItem, 
     processSymbols, 
     categorizeActiveSymbols, 
-    cloneCategories,
-    TCategorizedSymbolItem
 } from '../types/active-symbols.types';
+import {
+    TCategorizedSymbolItem,
+    TSubCategoryDataItem,
+} from '../types/categorical-display.types';
 
 import Context from '../components/ui/Context';
 import { STATE } from '../Constant';
@@ -24,7 +25,7 @@ import {
     TNetworkConfig,
     TPaginationCallbackParams,
     TQuote,
-    TRatio
+    TRatio,
 } from '../types';
 import PendingPromise from '../utils/PendingPromise';
 import BarrierStore from './BarrierStore';
@@ -40,7 +41,7 @@ class ChartStore {
     static tradingTimes: TradingTimes | null;
     static processedSymbols: TProcessedSymbolItem[];
     static symbolMap: Record<string, TProcessedSymbolItem> = {};
-    static categorizedSymbols: TCategorizedSymbolItem[] = [];
+    static categorizedSymbols: TCategorizedSymbolItem<TSubCategoryDataItem>[] = [];
     
     chartContainerHeight?: number;
     chartHeight?: number;
@@ -67,7 +68,7 @@ class ChartStore {
     
     processedSymbols?: TProcessedSymbolItem[];
     symbolMap: Record<string, TProcessedSymbolItem> = {};
-    categorizedSymbols: TCategorizedSymbolItem[] = [];
+    categorizedSymbols: TCategorizedSymbolItem<TSubCategoryDataItem>[] = [];
     
     constructor(mainStore: MainStore) {
         makeObservable(this, {
@@ -253,17 +254,15 @@ class ChartStore {
         const {
             symbol,
             granularity,
-            requestAPI,
             requestForget,
             requestForgetStream,
-            getTickHistory,
+            getTicksHistory,
             getQuotes,
             isMobile,
             enableRouting,
             onMessage,
             settings,
             onSettingsChange,
-            getMarketsOrder,
             initialData,
             chartData,
             feedCall,
@@ -271,11 +270,14 @@ class ChartStore {
             startWithDataFitMode,
             leftMargin,
         } = props;
+
         this.feedCall = feedCall || {};
         this.api = new BinaryAPI(
-            requestAPI, 
             requestForget, 
-            getTickHistory || (() => Promise.resolve([])), 
+            getTicksHistory || (async () => ({
+                candles: [],
+                echo_req: {},
+            })), 
             getQuotes || (() => (() => { /* Empty function */ })), 
             requestForgetStream
         );
@@ -286,7 +288,7 @@ class ChartStore {
             (ChartStore.tradingTimes = new TradingTimes(this.api, {
                 enable: this.feedCall.tradingTimes,
                 shouldFetchTradingTimes: this.mainStore.state.shouldFetchTradingTimes,
-                tradingTimes: initialData?.tradingTimes,
+                tradingTimes: initialData?.tradingTimes || chartData?.tradingTimes,
             }));
             
         // Process active symbols directly from initialData
@@ -444,18 +446,6 @@ class ChartStore {
         this.mainStore.chartAdapter.setSymbolClosed(isChartClosed);
     }
     
-    getProcessedCategorizedSymbols(): TCategorizedSymbolItem[] {
-        if (!this.processedSymbols || !this.categorizedSymbols.length) return [];
-        
-        return cloneCategories<TSubCategoryDataItem>(this.categorizedSymbols, (item: TSubCategoryDataItem) => {
-            const selected = item.dataObject.symbol === this.currentActiveSymbol?.symbol;
-            return {
-                ...item,
-                selected,
-            };
-        });
-    }
-    
     onServerTimeChange() {
         if (this.tradingTimes?._serverTime) {
             this.serverTime = moment(this.tradingTimes._serverTime.getEpoch() * 1000).format(
@@ -487,14 +477,6 @@ class ChartStore {
             !isLanguageChanged
         ) {
             return;
-        }
-
-        // If the symbol has changed, ensure TradingTimes is updated
-        if (symbolObj && this.currentActiveSymbol && symbolObj.symbol !== this.currentActiveSymbol.symbol) {
-            // The TradingTimes instance will be updated when new trading times data is received
-            // This is handled in ChartState.updateProps when chartData.tradingTimes changes
-            // and in the symbolChange function in app/index.tsx
-            console.log(`Symbol changed from ${this.currentActiveSymbol.symbol} to ${symbolObj.symbol}`);
         }
 
         this.newChart(symbolObj);

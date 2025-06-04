@@ -4,6 +4,9 @@ import {
     TradingTimesResponse,
     AuditDetailsForExpiredContract,
     ProposalOpenContract,
+    HistoryRequest,
+    OHLCStreamResponse,
+    TGranularity,
 } from 'src/types/api-types';
 
 import { TActiveDrawingToolItem, TDrawingCreatedConfig } from 'src/store/DrawToolsStore';
@@ -12,8 +15,6 @@ import { BinaryAPI } from 'src/binaryapi';
 import { ChartTypes } from 'src/Constant';
 import ChartState from 'src/store/ChartState';
 import { TNotification } from 'src/store/Notifier';
-import { TGranularity } from '.';
-import { OHLCStreamResponse } from './api.types';
 
 declare global {
     interface Window {
@@ -75,7 +76,7 @@ export type TBinaryAPIRequest = {
 };
 
 export type TBinaryAPIResponse = {
-    echo_req: {
+    echo_req?: {
         [k: string]: unknown;
     };
     req_id?: number;
@@ -87,11 +88,24 @@ export type TBinaryAPIResponse = {
 };
 
 export type TRequestAPI = (request: TBinaryAPIRequest) => Promise<TBinaryAPIResponse>;
-export type TResponseAPICallback = (response: TBinaryAPIResponse) => void;
-export type TRequestSubscribe = (request: TBinaryAPIRequest, callback: TResponseAPICallback) => void;
+export type TResponseAPICallback = (response: TQuote) => void;
 export type TRequestForgetStream = (id: string) => void;
-export type TRequestForget = (request: TBinaryAPIRequest, callback: TResponseAPICallback) => void;
-export type TGetTickHistory = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number }) => Promise<TQuote[]>;
+export type TRequestForget = (request?: HistoryRequest, callback?: TResponseAPICallback) => void;
+export type TgetTicksHistoryResult = {
+    candles?: Array<{
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        epoch: number;
+    }>;
+    history?: {
+        prices: number[];
+        times: number[];
+    };
+};
+
+export type TgetTicksHistory = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number; style?: string }) => Promise<TgetTicksHistoryResult>;
 export type TGetQuotes = (params: { symbol: string, granularity: TGranularity}, callback: (quote: TQuote) => void) => (() => void);
 export type TNetworkConfig = {
     class: string;
@@ -159,7 +173,7 @@ export type TGetIndicatorHeightRatio = (chart_height: number, indicator_count: n
 
 export type TInitialChartData = {
     masterData?: TQuote[];
-    tradingTimes?: TradingTimesResponse['trading_times'];
+    tradingTimes?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
     activeSymbols?: ActiveSymbols;
 };
 
@@ -187,10 +201,9 @@ export type TBarrierUpdateProps = {
 
 export type TChartProps = {
     ref: React.RefObject<{ hasPredictionIndicators(): void; triggerPopup(arg: () => void): void }>;
-    requestAPI: BinaryAPI['requestAPI'];
     requestForget: BinaryAPI['requestForget'];
     requestForgetStream?: BinaryAPI['requestForgetStream'];
-    getTickHistory?: TGetTickHistory;
+    getTicksHistory?: TgetTicksHistory;
     getQuotes?: TGetQuotes;
     id?: string;
     getMarketsOrder?: (active_symbols: ActiveSymbols) => string[];

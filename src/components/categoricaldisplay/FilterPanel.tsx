@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { CategoryIconMap, ArrowIcon } from '../Icons';
-import { TCategorizedSymbolItem, TCategorizedSymbols } from '../../binaryapi/ActiveSymbols';
+import { TCategorizedSymbolItem, TCategorizedSymbols } from '../../types/categorical-display.types';
 
 export type TFilterPanelProps = {
     filteredItems: TCategorizedSymbols;
@@ -48,7 +48,7 @@ const FilterGroup = React.memo(
         const [isOpen, setIsOpen] = React.useState(false);
 
         return (
-            <React.Fragment>
+            <>
                 <div
                     className={`sc-mcd__filter__item ${
                         isGroupActive && !isSearching ? 'sc-mcd__filter__item--selected' : ''
@@ -95,7 +95,7 @@ const FilterGroup = React.memo(
                         );
                     })}
                 </div>
-            </React.Fragment>
+            </>
         );
     }
 );

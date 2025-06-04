@@ -43,7 +43,7 @@ export type TCategorizedSymbolItem<T = TSubCategory> = {
     categoryNamePostfix?: string;
 };
 
-export type TCategorizedSymbols = TCategorizedSymbolItem[];
+export type TCategorizedSymbols = TCategorizedSymbolItem<TSubCategoryDataItem>[];
 
 // Helper functions for processing symbols
 export const processSymbols = (symbols: TActiveSymbols): TProcessedSymbols => {
@@ -80,7 +80,7 @@ export const categorizeActiveSymbols = (activeSymbols: TProcessedSymbols): TCate
         subcategoryName: d.submarket_display_name,
         data: [],
     });
-    const getCategory = (d: TProcessedSymbolItem): TCategorizedSymbolItem => ({
+    const getCategory = (d: TProcessedSymbolItem): TCategorizedSymbolItem<TSubCategoryDataItem> => ({
         categoryName: d.market_display_name,
         categoryId: d.market,
         hasSubcategory: true,
@@ -95,7 +95,7 @@ export const categorizeActiveSymbols = (activeSymbols: TProcessedSymbols): TCate
             category.categoryName !== symbol.market_display_name &&
             category.categoryName !== symbol.subgroup_display_name
         ) {
-            category.data.push(subcategory);
+            category.data.push(subcategory as unknown as TSubCategoryDataItem);
             categorizedSymbols.push(category);
             subcategory = getSubcategory(symbol);
             category = getCategory(symbol);
@@ -135,7 +135,7 @@ export const categorizeActiveSymbols = (activeSymbols: TProcessedSymbols): TCate
                 });
         }
         if (subcategory.subcategoryName !== symbol.submarket_display_name) {
-            category.data.push(subcategory);
+            category.data.push(subcategory as unknown as TSubCategoryDataItem);
             subcategory = getSubcategory(symbol);
         }
         subcategory.data.push({
@@ -146,7 +146,7 @@ export const categorizeActiveSymbols = (activeSymbols: TProcessedSymbols): TCate
         });
     }
 
-    category.data.push(subcategory);
+    category.data.push(subcategory as unknown as TSubCategoryDataItem);
     categorizedSymbols.push(category);
 
     return categorizedSymbols;
@@ -161,38 +161,4 @@ export function stableSort<T>(array: T[], compareFn: (a: T, b: T) => number): T[
             return order !== 0 ? order : a.index - b.index;
         })
         .map(({ item }) => item);
-}
-
-// Helper function for cloning categories
-export function cloneCategories<T>(categories: TCategorizedSymbolItem[], transformFn?: (item: T) => T): TCategorizedSymbolItem[] {
-    if (!categories || !categories.length) return [];
-    
-    return categories.map(category => {
-        const { subgroups = [], data = [] } = category;
-        return {
-            ...category,
-            subgroups: subgroups.map(subgroup => {
-                const { data: subgroupData = [] } = subgroup;
-                return {
-                    ...subgroup,
-                    data: subgroupData.map((subcategory: any) => {
-                        const { data: subcategoryData = [] } = subcategory;
-                        return {
-                            ...subcategory,
-                            data: transformFn
-                                ? subcategoryData.map((item: T) => transformFn(item))
-                                : [...subcategoryData],
-                        };
-                    }),
-                };
-            }),
-            data: data.map((subcategory: any) => {
-                const { data: subcategoryData = [] } = subcategory;
-                return {
-                    ...subcategory,
-                    data: transformFn ? subcategoryData.map((item: T) => transformFn(item)) : [...subcategoryData],
-                };
-            }),
-        };
-    });
 }

@@ -1,9 +1,9 @@
-import { TicksHistoryResponse, TickSpotData, TicksStreamResponse } from 'src/types/api-types';
+import { TickSpotData } from 'src/types/api-types';
 import { action, computed, observable, when, makeObservable } from 'mobx';
-import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
+import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
 import Context from 'src/components/ui/Context';
 import MainStore from '.';
-import { TBar } from '../types';
+import { TBar, TgetTicksHistoryResult, TQuote } from '../types';
 
 export default class LastDigitStatsStore {
     mainStore: MainStore;
@@ -67,7 +67,7 @@ export default class LastDigitStatsStore {
         return this.mainStore.state.shouldMinimiseLastDigits;
     }
 
-    async updateLastDigitStats(response?: TicksHistoryResponse) {
+    async updateLastDigitStats(response?: TgetTicksHistoryResult) {
         if (!this.context || !this.mainStore.chart.currentActiveSymbol) return;
         this.digits = [];
         this.bars = [];
@@ -79,10 +79,10 @@ export default class LastDigitStatsStore {
 
         const tickHistory =
             response ||
-            (await this.api?.getTickHistory({
+            (await this.api?.getTicksHistory({
                 symbol: this.mainStore.chart.currentActiveSymbol.symbol,
                 count: this.count,
-            } as TCreateTickHistoryParams));
+            } as TCreateHistoryParams));
         this.latestData = tickHistory?.history?.prices ? tickHistory.history.prices : [];
 
         if (!this.context || !this.mainStore.chart.currentActiveSymbol) return;
@@ -92,7 +92,7 @@ export default class LastDigitStatsStore {
         });
         this.updateBars();
     }
-    onMasterDataUpdate({ Close, tick }: TicksStreamResponse & { Close: number }) {
+    onMasterDataUpdate({ Close, tick }: TQuote & { Close: number }) {
         if (!this.context || !this.mainStore.chart.currentActiveSymbol || !this.mainStore.lastDigitStats.isVisible) return;
         this.lastTick = tick;
         if (this.marketDisplayName !== this.lastSymbol) {

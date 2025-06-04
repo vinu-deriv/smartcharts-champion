@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import CategoricalDisplayStore from 'src/store/CategoricalDisplayStore';
-import { TProcessedSymbolItem } from 'src/binaryapi/ActiveSymbols';
+import { TProcessedSymbolItem } from 'src/types/active-symbols.types';
 import Scroll from '../Scroll';
 import '../../../sass/components/_categorical-display.scss';
 import SearchInput from '../SearchInput';

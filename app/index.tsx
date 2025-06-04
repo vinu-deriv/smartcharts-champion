@@ -22,13 +22,13 @@ import moment from 'moment';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { TNotification } from 'src/store/Notifier';
-import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener } from 'src/types';
-import { AuditDetailsForExpiredContract, ProposalOpenContract, TradingTimesResponse, TicksHistoryResponse } from 'src/types/api-types';
+import { TGranularity, TNetworkConfig, TQuote, TRefData, TResponseAPICallback, TStateChangeListener } from 'src/types';
+import { AuditDetailsForExpiredContract, ProposalOpenContract, HistoryRequest, TicksHistoryResponse } from 'src/types/api-types';
 import 'url-search-params-polyfill';
 import './app.scss';
 import ChartHistory from './ChartHistory';
 import ChartNotifier from './ChartNotifier';
-import { ConnectionManager, StreamManager } from './connection';
+import { ConnectionManager, StreamManager, getTicksHistory, setConnectionManager } from './connection';
 import NetworkMonitor from './connection/NetworkMonitor';
 import Notification from './Notification';
 
@@ -50,16 +50,7 @@ if (window.isProductionWebsite) {
     s.src = 'https://cdn.trackjs.com/releases/current/tracker.js';
     document.body.appendChild(s);
 }
-/* // PWA support is temporarily removed until its issues can be sorted out
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(`${window.location.origin + window.location.pathname}sw.js`)
-        .then(() => {
-            console.log('Service Worker Registered');
-        }).catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
-        });
-}
-*/
+
 configure({ enforceActions: 'observed' });
 function getLanguageStorage() {
     const default_language = 'en';
@@ -85,6 +76,9 @@ const connectionManager = new ConnectionManager({
     language,
     endpoint: serverUrl,
 });
+
+// Set the connection manager instance for getTicksHistory
+setConnectionManager(connectionManager);
 const IntervalEnum = {
     second: 1,
     minute: 60,
@@ -117,216 +111,197 @@ const activeLanguages = [
     'ZH_TW',
 ];
 const streamManager = new StreamManager(connectionManager);
-// Get trading times data
+// Get trading times and active symbols data
 const tradingTimesPromise = connectionManager.send({ trading_times: 'today' });
+const activeSymbolsPromise = connectionManager.send({ active_symbols: 'brief' });
 
-// Create dummy data for masterData instead of fetching from API
-const createDummyData = (type: 'tick' | 'candle' = 'tick'): TicksHistoryResponse => {
-    const now = new Date();
-    
-    if (type === 'tick') {
-        // Return tick history format
-        const prices: number[] = [];
-        const times: number[] = [];
-        
-        for (let i = 0; i < 1000; i++) {
-            const date = new Date(now.getTime() - (1000 - i) * 60 * 1000);
-            const price = 100 + Math.random() * 10;
-            const epoch = Math.floor(date.getTime() / 1000);
-            
-            prices.push(price);
-            times.push(epoch);
-        }
-        
-        return {
-            history: {
-                prices,
-                times,
-            },
-            msg_type: "history",
-            echo_req: {
-                ticks_history: "R_100",
-                style: "ticks",
-                count: 1000,
-            },
-        };
-    }
-    
-    // Return candle format
-    const candles = [];
-    
-    for (let i = 0; i < 1000; i++) {
-        const date = new Date(now.getTime() - (1000 - i) * 60 * 1000);
-        const close = 100 + Math.random() * 100;
-        const open = close - Math.random() * 20;
-        const high = close + Math.random() * 20;
-        const low = open - Math.random() * 20;
-        const epoch = Math.floor(date.getTime() / 1000);
-        
-        candles.push({
-            close,
-            epoch,
-            high,
-            low,
-            open,
-        });
-    }
-    
-    return {
-        candles,
-        msg_type: "candles",
-        echo_req: {
-            ticks_history: "R_100",
-            style: "candles",
-            count: 1000,
-        },
-    };
-};
-
-const getTickHistory = ({ symbol, granularity, count, start, end, style }: { symbol: string; granularity: number; count: number; start?: number; end?: number, style?: string  }): any => {
-    console.log('getTickHistory called with', { symbol, granularity, count, start, end, style });
-    
-    // Determine whether to return tick or candle data based on style parameter
-    // If style is 'ticks', return tick data, otherwise return candle data
-    const dataType = !granularity ? 'tick' : 'candle';
-    const dummyData = createDummyData(dataType);
-    
-    // In a real app, you would fetch the data from an API
-    // For now, just return dummy data as a Promise
-    return dummyData;
-};
 
 // Create getQuotes function for subscribing to real-time quotes
-// Store cleanup functions for each subscription
-const quoteCleanupFunctions: Record<string, () => void> = {};
+// Store subscription IDs for each subscription
+const subscriptionIds: Record<string, string | undefined> = {};
 
-const getQuotes = ({ symbol, granularity, style }: { symbol: string; granularity?: number; style?: string }, callback: (quote: any) => void): (() => void) => {
-    console.log('getQuotes called for symbol', symbol, 'with granularity', granularity, 'and style', style);
+const getQuotes = ({ symbol, granularity, style }: { symbol: string; granularity?: number; style?: string }, callback: (quote: TQuote) => void): (() => void) => {
     
-    // In a real app, this would subscribe to real-time quotes via WebSocket
-    // For demo purposes, we'll simulate real-time updates with an interval
-    const intervalId = setInterval(() => {
-        const now = new Date();
-        const epoch = Math.floor(now.getTime() / 1000);
-        
-        // Generate base values for our quotes
-        const basePrice = 100 + Math.random() * 10; // Use same scale as history data
-        const randomChange = (Math.random() - 0.5) * 2;
-        const newClose = basePrice + randomChange;
-        const newOpen = newClose - Math.random() * 1;
-        const newHigh = Math.max(newClose, newOpen) + Math.random() * 1;
-        const newLow = Math.min(newClose, newOpen) - Math.random() * 1;
-        
-        // Generate a random UUID for the subscription ID
-        const uuid = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () => {
-            return (Math.random() * 16 | 0).toString(16);
-        });
-        
-        if (!granularity || style === 'ticks') {
-            // Tick format - matches the history.prices and history.times format
-            const tickResponse = {
-                echo_req: {
-                    adjust_start_time: 1,
-                    count: 1000,
-                    end: "latest",
-                    req_id: Math.floor(Math.random() * 100),
-                    style: "ticks",
-                    subscribe: 1,
-                    ticks_history: symbol,
-                },
-                msg_type: "tick",
-                req_id: Math.floor(Math.random() * 100),
-                subscription: {
-                    id: uuid,
-                },
-                tick: {
-                    ask: newClose + 0.1,
-                    bid: newClose - 0.1,
-                    epoch,
-                    id: uuid,
-                    pip_size: 2,
-                    quote: newClose,
-                    symbol,
-                },
-            };
-            
-            callback(tickResponse);
-        } else {
-            // OHLC format - matches the candles format
-            const ohlcResponse = {
-                echo_req: {
-                    adjust_start_time: 1,
-                    count: 1000,
-                    end: "latest",
-                    granularity: granularity || 60,
-                    req_id: Math.floor(Math.random() * 100),
-                    style: "candles",
-                    subscribe: 1,
-                    ticks_history: symbol,
-                },
-                msg_type: "ohlc",
-                req_id: Math.floor(Math.random() * 100),
-                subscription: {
-                    id: uuid,
-                },
-                ohlc: {
-                    close: newClose.toString(),
-                    epoch,
-                    granularity: granularity || 60,
-                    high: newHigh.toString(),
-                    id: uuid,
-                    low: newLow.toString(),
-                    open: newOpen.toString(),
-                    open_time: epoch - (granularity || 60),
-                    pip_size: 2,
-                    symbol,
-                },
-            };
-            
-            callback(ohlcResponse);
-        }
-    }, 1000); // Update every second
-    
-    // Return a function to unsubscribe
-    const cleanupFunction = () => {
-        clearInterval(intervalId);
-        console.log('Unsubscribed from quotes for symbol', symbol);
+    // Create a subscription request with all required fields
+    const request: any = {
+        ticks_history: symbol,
+        style: style || granularity ? 'candles' : 'ticks',
+        subscribe: 1,
+        adjust_start_time: 1,
+        count: 1,
+        end: 'latest',
+        req_id: Math.floor(Math.random() * 1000000), // Generate a random request ID
     };
     
-    // Store the cleanup function with a key based on symbol and granularity
-    const key = `${symbol}-${granularity || 0}`;
-    quoteCleanupFunctions[key] = cleanupFunction;
+    // Add granularity if needed
+    if (granularity) {
+        request.granularity = granularity;
+    }
     
-    return cleanupFunction;
+    // Create a handler for the subscription
+    const handleResponse = (response: any) => {
+        // Store the subscription ID when we receive it
+        if (response.subscription && response.subscription.id) {
+            const key = `${symbol}-${granularity || 0}`;
+            subscriptionIds[key] = response.subscription.id;
+        }
+        
+        // Process tick data
+        if (response.tick) {
+            const { tick } = response;
+            const epoch = tick.epoch;
+            const quote = tick.quote;
+            
+            // Create TQuote object with tick data
+            const quoteObj: TQuote = {
+                Date: new Date(epoch * 1000).toISOString(),
+                Close: quote,
+                tick,
+                DT: new Date(epoch * 1000),
+            };
+            
+            callback(quoteObj);
+        }
+        
+        // Process candle data
+        if (response.ohlc) {
+            const { ohlc } = response;
+            const epoch = ohlc.open_time;
+            
+            // Create TQuote object with OHLC data
+            const quoteObj: TQuote = {
+                Date: new Date(epoch * 1000).toISOString(),
+                Open: parseFloat(ohlc.open),
+                High: parseFloat(ohlc.high),
+                Low: parseFloat(ohlc.low),
+                Close: parseFloat(ohlc.close),
+                ohlc,
+                DT: new Date(epoch * 1000),
+            };
+            
+            callback(quoteObj);
+        }
+    };
+    
+    // Subscribe to the stream
+    streamManager.subscribe(request, handleResponse);
+    
+    return () => {
+        
+        // Create a forget request with all required fields
+        const forgetRequest = {
+            ticks_history: symbol,
+            granularity: granularity || undefined,
+            req_id: Math.floor(Math.random() * 1000000), // Generate a random request ID
+        };
+        
+        // Call the streamManager forget method
+        streamManager.forget(forgetRequest, handleResponse);
+    };
 };
 const requestAPI = connectionManager.send.bind(connectionManager);
 
-// Modified requestForget to also cancel the getQuotes interval
-const requestForget = (request: any, callback: any) => {
-    // Call the original forget method
-    streamManager.forget(request, callback);
-    
+// Modified requestForget to handle subscription IDs
+const requestForget = (request?: HistoryRequest, callback?: TResponseAPICallback) => {
     // Extract symbol and granularity from the request to create the key
-    const { ticks_history: symbol, granularity } = request;
+    if(!request?.symbol || !request?.granularity) return;
+    const { symbol, granularity } = request;
     const key = `${symbol}-${granularity || 0}`;
     
-    // If we have a cleanup function for this subscription, call it
-    if (quoteCleanupFunctions[key]) {
-        quoteCleanupFunctions[key]();
-        delete quoteCleanupFunctions[key];
-        console.log('Cancelled getQuotes interval for', key);
+    // If we have a subscription ID for this key, add it to the request
+    if (subscriptionIds[key]) {
+        // Create a forget request with the subscription ID
+        const forgetRequest = {
+            forget: subscriptionIds[key],
+            req_id: Math.floor(Math.random() * 1000000), // Generate a random request ID
+        };
+        
+        // Call the connectionManager directly to forget the subscription
+        connectionManager.send(forgetRequest).then(() => {
+            delete subscriptionIds[key];
+        }).catch(error => {
+            console.error('Error forgetting subscription:', error);
+        });
     }
+    
+    // Call the original forget method as a fallback
+    // We need to adapt the callback to match what streamManager.forget expects
+    streamManager.forget(request, (response: TicksHistoryResponse) => {
+        // Create a TQuote object from the TicksHistoryResponse if needed
+        // This is a simplified adapter - in a real implementation, you'd need to
+        // properly convert from TicksHistoryResponse to TQuote based on your app's logic
+        if (response) {
+            if(!callback) return;
+            callback(response as any);
+        }
+    });
 };
 const App = () => {
     const startingLanguageRef = React.useRef('en');
-    const [tradingTimes, setTradingTimes] = React.useState<TradingTimesResponse['trading_times'] | undefined>(undefined);
+    const [tradingTimes, setTradingTimes] = React.useState<Record<string, { isOpen: boolean; openTime: string; closeTime: string }> | undefined>(undefined);
+    const [activeSymbols, setActiveSymbols] = React.useState(hardcodedActiveSymbols);
+    const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
     React.useEffect(() => {
-        tradingTimesPromise.then(response => {
-            if (response.trading_times) {
-                setTradingTimes(response.trading_times);
-            }
-        });
+        setIsLoading(true);
+        
+        // Fetch both trading times and active symbols
+        Promise.all([tradingTimesPromise, activeSymbolsPromise])
+            .then(([tradingTimesResponse, activeSymbolsResponse]) => {
+                // Process trading times
+                if (tradingTimesResponse.trading_times) {
+                    // Create simplified trading times format
+                    const simplified: Record<string, { isOpen: boolean; openTime: string; closeTime: string }> = {};
+                    
+                    tradingTimesResponse.trading_times.markets.forEach(market => {
+                        market.submarkets?.forEach(submarket => {
+                            submarket.symbols?.forEach(symbolObj => {
+                                const { symbol, times } = symbolObj;
+                                const { open, close } = times;
+                                
+                                // Determine if market is open
+                                const now = new Date();
+                                const dateStr = now.toISOString().substring(0, 11);
+                                const isOpenAllDay = open.length === 1 && open[0] === '00:00:00' && close[0] === '23:59:59';
+                                const isClosedAllDay = open.length === 1 && open[0] === '--' && close[0] === '--';
+                                
+                                let isOpen = isOpenAllDay;
+                                let openTime = '';
+                                let closeTime = '';
+                                
+                                if (!isClosedAllDay && open.length > 0 && close.length > 0) {
+                                    openTime = `${dateStr}${open[0]}Z`;
+                                    closeTime = `${dateStr}${close[0]}Z`;
+                                    
+                                    const openDate = new Date(openTime);
+                                    const closeDate = new Date(closeTime);
+                                    
+                                    isOpen = now >= openDate && now < closeDate;
+                                } 
+                                
+                                simplified[symbol] = {
+                                    isOpen,
+                                    openTime,
+                                    closeTime,
+                                };
+                            });
+                        });
+                    });
+                    
+                    setTradingTimes(simplified);
+                }
+                
+                // Process active symbols
+                if (activeSymbolsResponse.active_symbols) {
+                    setActiveSymbols(activeSymbolsResponse.active_symbols);
+                }
+                
+                setIsLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                setIsLoading(false);
+            });
     }, []);
 
     const [notifier] = React.useState(new ChartNotifier());
@@ -397,16 +372,9 @@ const App = () => {
         const networkMonitor = NetworkMonitor.getInstance();
         networkMonitor.init(requestAPI, handleNetworkStatus);
     }, []);
-    /*
-    shouldComponentUpdate(nextProps, nextState) {
-        return this.state.symbol !== nextState.symbol
-            || JSON.stringify(this.state.settings) !== JSON.stringify(nextState.settings);
-    }
-    */
     const handleNetworkStatus = (status: TNetworkConfig) => setNetworkStatus(status);
     const saveSettings = React.useCallback(newSettings => {
         const prevSetting = settingsRef.current;
-        console.log('settings updated:', newSettings);
         localStorage.setItem('smartchart-setting', JSON.stringify(newSettings));
         if (!prevSetting.historical && newSettings.historical) {
             setChartType('line');
@@ -434,14 +402,6 @@ const App = () => {
         const symbolChange = (new_symbol: string) => {
             logEvent(LogCategories.ChartTitle, LogActions.MarketSelector, new_symbol);
             notifier.removeByCategory('activesymbol');
-            
-            // Fetch new trading times when symbol changes
-            connectionManager.send({ trading_times: 'today' }).then(response => {
-                if (response.trading_times) {
-                    
-                    setTradingTimes(response.trading_times);
-                }
-            });
             
             setSymbol(new_symbol);
         };
@@ -480,6 +440,13 @@ const App = () => {
     };
     const ref = React.useRef(null);
 
+    // Show loading indicator while data is being fetched
+    if (isLoading) {
+        return (
+            <></>
+        );
+    }
+
     return (
         <SmartChart
             ref={ref}
@@ -494,7 +461,6 @@ const App = () => {
             topWidgets={renderTopWidgets}
             toolbarWidget={renderToolbarWidget}
             chartControlsWidgets={renderControls}
-            requestAPI={requestAPI}
             requestForget={requestForget}
             endEpoch={endEpoch}
             chartType={chartType}
@@ -508,13 +474,12 @@ const App = () => {
             enabledChartFooter
             allTicks={allTicks}
             contractInfo={contractInfo}
-            feedCall={{ activeSymbols: false, tradingTimes: true }}
+            feedCall={{ activeSymbols: false, tradingTimes: false }}
             initialData={{ 
-                activeSymbols: hardcodedActiveSymbols,
-                tradingTimes,
+                activeSymbols,
             }}
-            chartData={{ tradingTimes }}
-            getTickHistory={getTickHistory}
+            chartData={{tradingTimes, activeSymbols}}
+            getTicksHistory={getTicksHistory}
             getQuotes={getQuotes}
             getIndicatorHeightRatio={(chart_height: number, indicator_count: number) => {
                 const isSmallScreen = chart_height < 780;

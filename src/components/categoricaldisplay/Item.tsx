@@ -1,7 +1,8 @@
 import React from 'react';
 import { ItemIconMap } from '../Icons';
 import Favorite from '../Favorite';
-import { TProcessedSymbolItem, TSubCategoryDataItem } from '../../binaryapi/ActiveSymbols';
+import { TProcessedSymbolItem } from '../../types/active-symbols.types';
+import { TSubCategoryDataItem } from '../../types/categorical-display.types';
 
 export type TBaseItemProps = {
     item: TSubCategoryDataItem;

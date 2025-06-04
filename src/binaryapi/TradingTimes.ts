@@ -1,16 +1,13 @@
-import { TradingTimesResponse } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
-import { Listener, TError, TOpenClose, TTradingTimesItem, TTradingTimesSymbol } from 'src/types';
+import { Listener, TTradingTimesItem } from 'src/types';
 import PendingPromise from '../utils/PendingPromise';
 import ServerTime from '../utils/ServerTime';
 import BinaryAPI from './BinaryAPI';
 
-const DaysOfWeek = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
-
 type TTradingTimesParam = {
     enable?: boolean;
     shouldFetchTradingTimes?: boolean;
-    tradingTimes?: TradingTimesResponse['trading_times'];
+    tradingTimes?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
 };
 class TradingTimes {
     _api: BinaryAPI;
@@ -99,123 +96,38 @@ class TradingTimes {
         return changed;
     }
     async _updateTradeTimes() {
-        let response: Partial<TradingTimesResponse> = {};
-
-        if (!this._tradingTimesMap && this._params.tradingTimes) {
-            response = (this._params.tradingTimes as unknown) as Partial<TradingTimesResponse>;
-        } else if (this._params.enable !== false) {
-            response = await this._api.getTradingTimes(this.lastUpdateDate);
-        } else {
-            console.error('TradingTimes feed is not enable nor has initial data!');
-            return;
+        // If simplified trading times are provided, use them directly
+        if (this._params.tradingTimes) {
+            this._calculatingTradingTime(this._params.tradingTimes);
         }
-        if ('error' in response && response?.error) {
-            const error = response.error as TError;
-            console.error(`Error getting trading times on ${this.lastUpdateDate}: [${error.code}] "${error.message}"`);
-            return;
-        }
-
-        this._calculatingTradingTime(response.trading_times);
     }
 
-    _calculatingTradingTime(raw_trading_time: TradingTimesResponse['trading_times'] | undefined) {
-        if (!raw_trading_time) return;
+    _calculatingTradingTime( tradingTimes?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>) {
+        if (!tradingTimes) return;
         this._tradingTimesMap = {};
-        const now = this._serverTime.getLocalDate();
-        const dateStr = now.toISOString().substring(0, 11);
-        const getUTCDate = (hour: string) => new Date(`${dateStr}${hour}Z`);
 
-        if (!raw_trading_time) return;
-
-        const { markets } = raw_trading_time;
-        for (const market of markets) {
-            const { submarkets = [] } = market;
-            for (const submarket of submarkets) {
-                const { symbols = [] } = submarket;
-                for (const symbolObj of symbols) {
-                    const {
-                        events,
-                        feed_license,
-                        delay_amount,
-                        times,
-                        trading_days,
-                        symbol,
-                    } = symbolObj as TTradingTimesSymbol;
-                    const { open, close } = times;
-                    let isClosedToday = false;
-                    const holidays: string[] = [];
-                    const closes_early: TOpenClose[] = [];
-                    const opens_late: TOpenClose[] = [];
-                    events
-                        .map(event =>
-                            event.dates.includes(',')
-                                ? event.dates.split(',').map(date => ({
-                                      date: date.trim(),
-                                      description: event.descrip,
-                                  }))
-                                : [{ date: event.dates, description: event.descrip }]
-                        )
-                        .reduce((ary, item) => ary.concat(item), [])
-                        .forEach(event => {
-                            const lower_description = event.description.toLowerCase();
-                            // Open Late
-                            if (/^opens late \(at (\d{1,2}:\d{1,2})\)$/gm.test(event.description.toLowerCase())) {
-                                const event_hour = `${lower_description
-                                    .replace('opens late (at ', '')
-                                    .replace(')', '')}:00`;
-                                const event_date =
-                                    event.date === 'today' || event.date === DaysOfWeek[now.getDay()]
-                                        ? dateStr.substring(0, 10)
-                                        : event.date;
-                                opens_late.push({
-                                    date: event_date,
-                                    open: new Date(`${event_date}T${event_hour}Z`),
-                                    close: new Date(`${event_date}T${close[0]}Z`),
-                                });
-                                // Close early
-                            } else if (/^closes early \(at (\d{1,2}:\d{1,2})\)$/gm.test(lower_description)) {
-                                const event_hour = `${lower_description
-                                    .replace('closes early (at ', '')
-                                    .replace(')', '')}:00`;
-                                const event_date =
-                                    event.date === 'today' || event.date === DaysOfWeek[now.getDay()]
-                                        ? dateStr.substring(0, 10)
-                                        : event.date;
-                                closes_early.push({
-                                    date: event_date,
-                                    open: new Date(`${event_date}T${open[0]}Z`),
-                                    close: new Date(`${event_date}T${event_hour}Z`),
-                                });
-                                // Special date
-                            } else if (/^\d{4}-\d{2}-\d{2}$/.test(event.date)) {
-                                holidays.push(event.date);
-                            }
-                            if (trading_days.every(day => day !== DaysOfWeek[now.getDay()].slice(0, 3))) {
-                                isClosedToday = true;
-                            }
-                        });
-                    let _times;
-                    const isOpenAllDay = open.length === 1 && open[0] === '00:00:00' && close[0] === '23:59:59';
-                    const isClosedAllDay = open.length === 1 && open[0] === '--' && close[0] === '--';
-                    if (!isOpenAllDay && !isClosedAllDay) {
-                        _times = open.map((openTime: string, idx) => ({
-                            open: getUTCDate(openTime),
-                            close: getUTCDate(close[idx]),
-                        }));
-                    }
-                    this._tradingTimesMap[symbol] = {
-                        feed_license,
-                        isClosedToday,
-                        holidays,
-                        closes_early,
-                        opens_late,
-                        delay_amount: delay_amount || 0,
-                        times: _times,
-                        isOpenAllDay,
-                        isClosedAllDay,
-                    };
-                }
+        // Handle simplified trading times format if provided
+        if (tradingTimes) {
+            for (const symbol in tradingTimes) {
+                const { isOpen, openTime, closeTime } = tradingTimes[symbol];
+                
+                this._tradingTimesMap[symbol] = {
+                    feed_license: undefined,
+                    isClosedToday: !isOpen,
+                    holidays: [],
+                    closes_early: [],
+                    opens_late: [],
+                    delay_amount: 0,
+                    times: openTime && closeTime ? [{
+                        open: new Date(openTime),
+                        close: new Date(closeTime),
+                    }] : undefined,
+                    isOpenAllDay: false,
+                    isClosedAllDay: false,
+                    isOpened: isOpen,
+                };
             }
+            return;
         }
 
         const changed = this._updateMarketOpenClosed();
