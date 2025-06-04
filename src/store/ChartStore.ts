@@ -4,11 +4,8 @@ import { action, computed, observable, reaction, makeObservable } from 'mobx';
 import moment from 'moment';
 import MainStore from '.';
 import { BinaryAPI, TradingTimes } from '../binaryapi';
-import { 
-    TProcessedSymbolItem, 
-    processSymbols, 
-    categorizeActiveSymbols, 
-} from '../types/active-symbols.types';
+import { TProcessedSymbolItem } from '../types/active-symbols.types';
+import { processSymbols, categorizeActiveSymbols } from '../utils/active-symbols';
 import {
     TCategorizedSymbolItem,
     TSubCategoryDataItem,
@@ -295,17 +292,18 @@ class ChartStore {
         if (initialData?.activeSymbols) {
             
             // Process and categorize symbols
-            this.processedSymbols = processSymbols(initialData.activeSymbols);
-            this.categorizedSymbols = categorizeActiveSymbols(this.processedSymbols);
+            const processedSymbols = processSymbols(initialData.activeSymbols);
+            this.processedSymbols = processedSymbols;
+            this.categorizedSymbols = categorizeActiveSymbols(processedSymbols);
             
             // Create symbol map for quick lookup
             this.symbolMap = {};
-            for (const symbolObj of this.processedSymbols) {
+            for (const symbolObj of processedSymbols) {
                 this.symbolMap[symbolObj.symbol] = symbolObj;
             }
             
             // Store in static properties for reuse
-            ChartStore.processedSymbols = this.processedSymbols;
+            ChartStore.processedSymbols = processedSymbols;
             ChartStore.symbolMap = this.symbolMap;
             ChartStore.categorizedSymbols = this.categorizedSymbols;
         } else if (this.currentLanguage === settings?.language && ChartStore.processedSymbols) {

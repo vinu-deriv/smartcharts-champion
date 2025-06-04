@@ -23,7 +23,7 @@ import {
     getYAxisScalingParams,
 } from '../utils';
 import ChartStore from './ChartStore';
-import { processSymbols, categorizeActiveSymbols } from '../types/active-symbols.types';
+import { processSymbols, categorizeActiveSymbols } from '../utils/active-symbols';
 
 type TStateChangeOption = {
     indicator_type_name?: string;
@@ -224,7 +224,7 @@ class ChartState {
         ) {
             this.activeSymbols = JSON.stringify(chartData.activeSymbols);
             // Process active symbols directly
-            if (this.mainStore.chart.processedSymbols) {
+            if (this.mainStore.chart.processedSymbols && chartData?.activeSymbols) {
                 this.mainStore.chart.processedSymbols = processSymbols(chartData.activeSymbols);
                 this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(this.mainStore.chart.processedSymbols);
                 
@@ -315,12 +315,13 @@ class ChartState {
 
             // If refreshActiveSymbols is true and we have chartData with activeSymbols, reprocess them
             if (this.refreshActiveSymbols && chartData?.activeSymbols) {
-                this.mainStore.chart.processedSymbols = processSymbols(chartData.activeSymbols);
-                this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(this.mainStore.chart.processedSymbols);
+                const processedSymbols = processSymbols(chartData.activeSymbols);
+                this.mainStore.chart.processedSymbols = processedSymbols;
+                this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(processedSymbols);
                 
                 // Create symbol map for quick lookup
                 this.mainStore.chart.symbolMap = {};
-                for (const symbolObj of this.mainStore.chart.processedSymbols) {
+                for (const symbolObj of processedSymbols) {
                     this.mainStore.chart.symbolMap[symbolObj.symbol] = symbolObj;
                 }
             }
