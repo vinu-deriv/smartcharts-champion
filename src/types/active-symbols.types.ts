@@ -1,5 +1,3 @@
-import { ActiveSymbols as TActiveSymbols } from './api-types';
-
 export type TProcessedSymbolItem = {
     symbol: string;
     name: string;

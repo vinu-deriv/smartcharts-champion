@@ -17,7 +17,7 @@ interface HistoryParams {
 // This function is called from app/index.tsx where connectionManager is available
 let connectionManagerInstance: ConnectionManager;
 
-const getTicksHistory = async ({ symbol, granularity, count, start, end, style }: HistoryParams): Promise<TgetTicksHistoryResult> => {
+const getTicksHistory = async ({ symbol, granularity, count, start, end }: HistoryParams): Promise<TgetTicksHistoryResult> => {
     
     if (!connectionManagerInstance) {
         throw new Error('ConnectionManager instance not set. Call setConnectionManager first.');
