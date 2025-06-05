@@ -9,6 +9,7 @@ export type SubscriptionInformation = {
 
 export type HistoryRequest = {
     symbol: string;
+    ticks_history?:string;
     adjust_start_time?: number;
     count?: string | number;
     end?: string;

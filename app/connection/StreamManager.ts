@@ -9,7 +9,6 @@ import {
 import { ArrayElement, OHLCStreamResponse, TBinaryAPIRequest } from 'src/types';
 import ConnectionManager from './ConnectionManager';
 import Stream from './Stream';
-import { mergeTickHistory } from './tickUtils';
 
 class StreamManager {
     MAX_CACHE_TICKS = 5000;
@@ -29,13 +28,17 @@ class StreamManager {
         this._connection.onClosed(this._onConnectionClosed.bind(this));
     }
 
-    _onTick(data: TicksStreamResponse) {
-        const key = this._getKey((data.echo_req as unknown) as HistoryRequest);
+    _onTick(data: TicksStreamResponse & { 
+        echo_req: any, 
+        msg_type: string,
+        [key: string]: { id?: string } | any 
+    }) {
+        const key = this._getKey(data.echo_req as HistoryRequest);
 
         if (this._streams[key] && this._tickHistoryCache[key]) {
             this._streamIds[key] = data[data.msg_type]?.id;
             this._cacheTick(key, data);
-            this._streams[key].emitTick(data);
+            this._streams[key].emitTick(data as any);
         } else if (!(key in this._beingForgotten)) {
             // There could be the possibility a stream could still enter even though
             // it is no longer in used. This is because we can't know the stream ID
@@ -57,8 +60,8 @@ class StreamManager {
         }
     }
 
-    _onReceiveTickHistory(data: Required<TicksHistoryResponse>) {
-        const key = this._getKey((data.echo_req as unknown) as HistoryRequest);
+    _onReceiveTickHistory(data: Required<TicksHistoryResponse> & { echo_req?: any }) {
+        const key = this._getKey(data.echo_req as HistoryRequest);
         const cache = StreamManager.cloneTickTicksHistoryResponse(data);
         if (cache) {
             this._tickHistoryCache[key] = cache;
@@ -92,7 +95,7 @@ class StreamManager {
             const { tick } = response;
             const history = this._tickHistoryCache[key].history;
 
-            const { prices, times } = history as Required<History>;
+            const { prices, times } = history as any;
             const { quote: price, epoch: time } = tick as Required<TickSpotData>;
 
             prices.push(price);
@@ -158,38 +161,6 @@ class StreamManager {
             stream = this._createNewStream(request);
         }
 
-        let tickTicksHistoryResponse = this._tickHistoryCache[key];
-        if (!tickTicksHistoryResponse) {
-            // If we don't have the tick history in cache yet, we need to wait for it
-            this._tickHistoryPromises[key].then(response => {
-                // Once we have the response, send it to the callback
-                if (response.error) {
-                    callback(response);
-                } else {
-                    // If cache data is available, send a copy otherwise we risk
-                    // mutating the cache outside of StreamManager
-                    callback(StreamManager.cloneTickTicksHistoryResponse(response));
-                }
-            });
-        } else {
-            const responseStart = ((tickTicksHistoryResponse.echo_req as unknown) as HistoryRequest).start;
-            if (responseStart && request.start && responseStart > request.start) {
-                // request needs more data
-                const patchRequest = { ...request };
-                delete patchRequest.subscribe;
-                const { history, candles } = tickTicksHistoryResponse as Required<TicksHistoryResponse>;
-                patchRequest.end = String(history && history.times?.[0] ? +history.times[0] : candles[0].epoch || '');
-                this._connection.send(patchRequest).then((patch) => {
-                    tickTicksHistoryResponse = mergeTickHistory(tickTicksHistoryResponse, patch as unknown as Required<TicksHistoryResponse>);
-                    callback(StreamManager.cloneTickTicksHistoryResponse(tickTicksHistoryResponse));
-                });
-            } else {
-                // If cache data is available, send a copy otherwise we risk
-                // mutating the cache outside of StreamManager
-                callback(StreamManager.cloneTickTicksHistoryResponse(tickTicksHistoryResponse));
-            }
-        }
-
         // Register the callback to receive stream updates
         stream.onStream(callback);
     }
@@ -202,11 +173,11 @@ class StreamManager {
         }
     }
 
-    _getKey({ symbol, granularity }: HistoryRequest) {
-        return `${symbol}-${granularity || 0}`;
+    _getKey({ symbol, granularity, ticks_history}: HistoryRequest) {
+        return `${symbol || ticks_history}-${granularity || 0}`;
     }
 
-    static cloneTickTicksHistoryResponse({ history, candles, ...others }: Required<TicksHistoryResponse>) {
+    static cloneTickTicksHistoryResponse({ history, candles, ...others }: Required<TicksHistoryResponse> & { echo_req?: any }) {
         let clone: TicksHistoryResponse | null = null;
 
         if (history) {
@@ -222,7 +193,7 @@ class StreamManager {
             clone = { ...others, candles: candles.slice(0) };
         }
 
-        return clone as Required<TicksHistoryResponse>;
+        return clone as any;
     }
 }
 

@@ -22,8 +22,7 @@ import moment from 'moment';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { TNotification } from 'src/store/Notifier';
-import { TGranularity, TNetworkConfig, TQuote, TRefData, TResponseAPICallback, TStateChangeListener } from 'src/types';
-import { AuditDetailsForExpiredContract, ProposalOpenContract, HistoryRequest, TicksHistoryResponse } from 'src/types/api-types';
+import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener, ProposalOpenContract, HistoryRequest  } from 'src/types';
 import 'url-search-params-polyfill';
 import './app.scss';
 import ChartHistory from './ChartHistory';
@@ -202,11 +201,11 @@ const getQuotes = ({ symbol, granularity, style }: { symbol: string; granularity
 const requestAPI = connectionManager.send.bind(connectionManager);
 
 // Modified requestForget to handle subscription IDs
-const requestForget = (request?: HistoryRequest, callback?: TResponseAPICallback) => {
+const requestForget = (request?: HistoryRequest) => {
     // Extract symbol and granularity from the request to create the key
-    if(!request?.symbol || !request?.granularity) return;
-    const { symbol, granularity } = request;
-    const key = `${symbol}-${granularity || 0}`;
+    if(!request?.symbol) return;
+    const { symbol, granularity = 0, ticks_history='' } = request;
+    const key = `${symbol || ticks_history}-${granularity || 0}`;
     
     // If we have a subscription ID for this key, add it to the request
     if (subscriptionIds[key]) {
@@ -226,15 +225,15 @@ const requestForget = (request?: HistoryRequest, callback?: TResponseAPICallback
     
     // Call the original forget method as a fallback
     // We need to adapt the callback to match what streamManager.forget expects
-    streamManager.forget(request, (response: TicksHistoryResponse) => {
-        // Create a TQuote object from the TicksHistoryResponse if needed
-        // This is a simplified adapter - in a real implementation, you'd need to
-        // properly convert from TicksHistoryResponse to TQuote based on your app's logic
-        if (response) {
-            if(!callback) return;
-            callback(response as any);
-        }
-    });
+    // streamManager.forget(request, (response: TicksHistoryResponse) => {
+    //     // Create a TQuote object from the TicksHistoryResponse if needed
+    //     // This is a simplified adapter - in a real implementation, you'd need to
+    //     // properly convert from TicksHistoryResponse to TQuote based on your app's logic
+    //     if (response) {
+    //         if(!callback) return;
+    //         callback(response as any);
+    //     }
+    // });
 };
 const App = () => {
     const startingLanguageRef = React.useRef('en');
@@ -364,7 +363,6 @@ const App = () => {
     const [isConnectionOpened, setIsConnectionOpened] = React.useState(true);
     const [networkStatus, setNetworkStatus] = React.useState<TNetworkConfig>();
     const [symbol, setSymbol] = React.useState<string>(memoizedValues.symbol);
-    const allTicks: keyof AuditDetailsForExpiredContract | [] = [];
     const contractInfo: keyof ProposalOpenContract | Record<string, never> = {};
     React.useEffect(() => {
         connectionManager.on(ConnectionManager.EVENT_CONNECTION_CLOSE, () => setIsConnectionOpened(false));
@@ -472,7 +470,6 @@ const App = () => {
             networkStatus={networkStatus}
             isLive
             enabledChartFooter
-            allTicks={allTicks}
             contractInfo={contractInfo}
             feedCall={{ activeSymbols: false, tradingTimes: false }}
             initialData={{ 
