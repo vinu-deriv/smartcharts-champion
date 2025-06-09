@@ -15,14 +15,13 @@ import {
     ToolbarWidget,
     Views,
 } from '@deriv-com/smartcharts'; // eslint-disable-line import/no-unresolved
-import { hardcodedActiveSymbols } from 'src/binaryapi/hardcoded-active-symbols';
 import whyDidYouRender from '@welldone-software/why-did-you-render';
 import { configure } from 'mobx';
 import moment from 'moment';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { TNotification } from 'src/store/Notifier';
-import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener, ProposalOpenContract, HistoryRequest  } from 'src/types';
+import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener, ProposalOpenContract, HistoryRequest, ActiveSymbols  } from 'src/types';
 import 'url-search-params-polyfill';
 import './app.scss';
 import ChartHistory from './ChartHistory';
@@ -238,7 +237,7 @@ const requestForget = (request?: HistoryRequest) => {
 const App = () => {
     const startingLanguageRef = React.useRef('en');
     const [tradingTimes, setTradingTimes] = React.useState<Record<string, { isOpen: boolean; openTime: string; closeTime: string }> | undefined>(undefined);
-    const [activeSymbols, setActiveSymbols] = React.useState(hardcodedActiveSymbols);
+    const [activeSymbols, setActiveSymbols] = React.useState<ActiveSymbols>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
     React.useEffect(() => {
