@@ -18,7 +18,7 @@ const parseCode = source => espree.parse(source, {
 
 function esc(s) {
     if (!s) return s;
-    return s.replace(/"/g, '\\"');
+    return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 const extractTextFromFunctions = (...method_names) => (parsed_code) => {
