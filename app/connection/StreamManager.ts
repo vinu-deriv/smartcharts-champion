@@ -1,12 +1,8 @@
-import {
-    Candles,
+import { ArrayElement, OHLCStreamResponse, TBinaryAPIRequest, TGetQuotesResult,   Candles,
     History,
-    HistoryRequest,
-    TicksHistoryResponse,
+    TGetQuotesRequest,
     TickSpotData,
-    TicksStreamResponse,
-} from 'src/types/api-types';
-import { ArrayElement, OHLCStreamResponse, TBinaryAPIRequest } from 'src/types';
+    TicksStreamResponse, } from 'src/types';
 import ConnectionManager from './ConnectionManager';
 import Stream from './Stream';
 
@@ -15,8 +11,8 @@ class StreamManager {
     _connection: ConnectionManager;
     _streams: Record<string, Stream> = {};
     _streamIds: Record<string, string | undefined> = {};
-    _tickHistoryCache: Record<string, Required<TicksHistoryResponse>> = {};
-    _tickHistoryPromises: Record<string, Promise<Required<TicksHistoryResponse>>> = {};
+    _tickHistoryCache: Record<string, Required<TGetQuotesResult>> = {};
+    _tickHistoryPromises: Record<string, Promise<Required<TGetQuotesResult>>> = {};
     _beingForgotten: Record<string, boolean> = {};
 
     constructor(connection: ConnectionManager) {
@@ -33,7 +29,7 @@ class StreamManager {
         msg_type: string,
         [key: string]: { id?: string } | any 
     }) {
-        const key = this._getKey(data.echo_req as HistoryRequest);
+        const key = this._getKey(data.echo_req as TGetQuotesRequest);
 
         if (this._streams[key] && this._tickHistoryCache[key]) {
             this._streamIds[key] = data[data.msg_type]?.id;
@@ -60,8 +56,8 @@ class StreamManager {
         }
     }
 
-    _onReceiveTickHistory(data: Required<TicksHistoryResponse> & { echo_req?: any }) {
-        const key = this._getKey(data.echo_req as HistoryRequest);
+    _onReceiveTickHistory(data: Required<TGetQuotesResult> & { echo_req?: any }) {
+        const key = this._getKey(data.echo_req as TGetQuotesRequest);
         const cache = StreamManager.cloneTickTicksHistoryResponse(data);
         if (cache) {
             this._tickHistoryCache[key] = cache;
@@ -130,16 +126,16 @@ class StreamManager {
         }
     }
 
-    _createNewStream(request: HistoryRequest) {
+    _createNewStream(request: TGetQuotesRequest) {
         const key = this._getKey(request);
         const stream = new Stream();
         this._streams[key] = stream;
         const subscribePromise = this._connection.send((request as unknown) as TBinaryAPIRequest);
-        this._tickHistoryPromises[key] = subscribePromise as unknown as Promise<Required<TicksHistoryResponse>>;
+        this._tickHistoryPromises[key] = subscribePromise as unknown as Promise<Required<TGetQuotesResult>>;
 
         subscribePromise
             .then(response => {
-                this._onReceiveTickHistory(response as unknown as Required<TicksHistoryResponse>);
+                this._onReceiveTickHistory(response as unknown as Required<TGetQuotesResult>);
                 if (response.error) {
                     this._forgetStream(key);
                 }
@@ -153,8 +149,8 @@ class StreamManager {
         return stream;
     }
 
-    subscribe(req: TBinaryAPIRequest, callback: (response: TicksHistoryResponse) => void) {
-        const request = (req as unknown) as HistoryRequest;
+    subscribe(req: TBinaryAPIRequest, callback: (response: TGetQuotesResult) => void) {
+        const request = (req as unknown) as TGetQuotesRequest;
         const key = this._getKey(request);
         let stream = this._streams[key];
         if (!stream) {
@@ -165,20 +161,20 @@ class StreamManager {
         stream.onStream(callback);
     }
 
-    forget(request: TBinaryAPIRequest, callback: (response: TicksHistoryResponse) => void) {
-        const key = this._getKey((request as unknown) as HistoryRequest);
+    forget(request: TBinaryAPIRequest, callback: (response: TGetQuotesResult) => void) {
+        const key = this._getKey((request as unknown) as TGetQuotesRequest);
         const stream = this._streams[key];
         if (stream) {
             stream.offStream(callback);
         }
     }
 
-    _getKey({ symbol, granularity, ticks_history}: HistoryRequest) {
+    _getKey({ symbol, granularity, ticks_history}: TGetQuotesRequest) {
         return `${symbol || ticks_history}-${granularity || 0}`;
     }
 
-    static cloneTickTicksHistoryResponse({ history, candles, ...others }: Required<TicksHistoryResponse> & { echo_req?: any }) {
-        let clone: TicksHistoryResponse | null = null;
+    static cloneTickTicksHistoryResponse({ history, candles, ...others }: Required<TGetQuotesResult> & { echo_req?: any }) {
+        let clone: TGetQuotesResult | null = null;
 
         if (history) {
             const { prices, times } = history as Required<History>;

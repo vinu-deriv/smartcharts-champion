@@ -1,5 +1,5 @@
 import ConnectionManager from './ConnectionManager';
 import StreamManager from './StreamManager';
-import getTicksHistory, { setConnectionManager } from './getTicksHistory';
+import getQuotes, { setConnectionManager } from './getQuotes';
 
-export { ConnectionManager, StreamManager, getTicksHistory, setConnectionManager };
+export { ConnectionManager, StreamManager, getQuotes, setConnectionManager };

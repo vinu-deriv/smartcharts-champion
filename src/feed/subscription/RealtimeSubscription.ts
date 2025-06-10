@@ -1,7 +1,6 @@
-import { ProposalOpenContract } from 'src/types/api-types';
-import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
+import { ProposalOpenContract, TGetQuotesRequest } from 'src/types/api-types';
 import { TQuote } from 'src/types/props.types';
-import { TickHistoryFormatter } from '../TickHistoryFormatter';
+import { QuoteFormatter } from '../QuoteFormatter';
 import Subscription from './Subscription';
 
 class RealtimeSubscription extends Subscription {
@@ -20,20 +19,15 @@ class RealtimeSubscription extends Subscription {
         return super.resume();
     }
 
-    async _startSubscribe(tickHistoryRequest: TCreateHistoryParams) {
+    async _startSubscribe(getQuotesRequest: TGetQuotesRequest) {
         const contract_info = this.contractInfo as ProposalOpenContract;
-        const response = await this._binaryApi.getTicksHistory(tickHistoryRequest);
-        const quotes = this._processTicksHistoryResponse(response);
+        const response = await this._binaryApi.getQuotes(getQuotesRequest);
+        const quotes = this._processGetQuotesResponse(response);
         
         // Create a promise that will be resolved when we receive the initial history
         
         // Create the callback function that will handle both history and tick updates
-        const processTickHistory = (resp: TQuote) => {
-            if (resp.tick && this._mainStore.chart.isDestroyed && resp.tick.id) {
-                this._binaryApi.forgetStream(resp.tick.id);
-                return;
-            }
-            
+        const processQuote = (resp: TQuote) => {
             // We assume that 1st response is the history, and subsequent
             // responses are tick stream data.
             if (resp.tick || resp.ohlc) {
@@ -45,10 +39,10 @@ class RealtimeSubscription extends Subscription {
         };
 
         // here we include duration = 'ticks' && exclude duration = 'seconds' which hasn't tick_stream, all_ticks, tick_count (consist of 15-86.400 ticks)
-        if (!this.shouldFetchTickHistory && !!contract_info.tick_stream) {
-            this._binaryApi.subscribeTickHistory(
-                Object.assign(tickHistoryRequest, { count: contract_info.tick_count }),
-                processTickHistory
+        if (!this.shouldFetchGetQuotes && !!contract_info.tick_stream) {
+            this._binaryApi.subscribeQuotes(
+                Object.assign(getQuotesRequest, { count: contract_info.tick_count }),
+                processQuote
             );
         } else {
             const contract_duration =
@@ -56,18 +50,14 @@ class RealtimeSubscription extends Subscription {
                     ? contract_info.current_spot_time - contract_info.date_start
                     : 0;
             const min_tick_count = 1000;
-            this._binaryApi.subscribeTickHistory(
-                Object.assign(tickHistoryRequest, {
+            this._binaryApi.subscribeQuotes(
+                Object.assign(getQuotesRequest, {
                     count: contract_duration > min_tick_count ? contract_duration : min_tick_count,
                 }),
-                processTickHistory
+                processQuote
             );
         }
-
-        // Wait for the initial history response
-        // const response = await tickHistoryPromise;
-        // const quotes = this._processTicksHistoryResponse(response);
-        this._tickCallback = processTickHistory;
+        this._tickCallback = processQuote;
 
         return { quotes, response };
     }
@@ -93,7 +83,7 @@ class RealtimeSubscription extends Subscription {
         if (epoch !== undefined) {
             this.lastStreamEpoch = +epoch;
         }
-        const quotes = [TickHistoryFormatter.formatTick(ticksResponse)];
+        const quotes = [QuoteFormatter.formatQuote(ticksResponse)];
         this._emitter.emit(Subscription.EVENT_CHART_DATA, quotes);
     }
 }

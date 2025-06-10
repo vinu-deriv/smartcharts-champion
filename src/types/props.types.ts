@@ -4,7 +4,7 @@ import {
     TradingTimesResponse,
     AuditDetailsForExpiredContract,
     ProposalOpenContract,
-    HistoryRequest,
+    TGetQuotesRequest,
     OHLCStreamResponse,
     TGranularity,
 } from 'src/types/api-types';
@@ -89,9 +89,8 @@ export type TBinaryAPIResponse = {
 
 export type TRequestAPI = (request: TBinaryAPIRequest) => Promise<TBinaryAPIResponse>;
 export type TResponseAPICallback = (response: TQuote) => void;
-export type TRequestForgetStream = (id: string) => void;
-export type TRequestForget = (request?: HistoryRequest, callback?: TResponseAPICallback) => void;
-export type TgetTicksHistoryResult = {
+export type TUnsubscribeQuotes = (request?: TGetQuotesRequest, callback?: TResponseAPICallback) => void;
+export type TGetQuotesResult = {
     candles?: Array<{
         open: number;
         high: number;
@@ -105,8 +104,8 @@ export type TgetTicksHistoryResult = {
     };
 };
 
-export type TgetTicksHistory = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number; style?: string }) => Promise<TgetTicksHistoryResult>;
-export type TGetQuotes = (params: { symbol: string, granularity: TGranularity}, callback: (quote: TQuote) => void) => (() => void);
+export type TGetQuotes = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number; style?: string }) => Promise<TGetQuotesResult>;
+export type TSubscribeQuotes = (params: { symbol: string, granularity: TGranularity}, callback: (quote: TQuote) => void) => (() => void);
 export type TNetworkConfig = {
     class: string;
     tooltip: string;
@@ -201,10 +200,9 @@ export type TBarrierUpdateProps = {
 
 export type TChartProps = {
     ref: React.RefObject<{ hasPredictionIndicators(): void; triggerPopup(arg: () => void): void }>;
-    requestForget: BinaryAPI['requestForget'];
-    requestForgetStream?: BinaryAPI['requestForgetStream'];
-    getTicksHistory?: TgetTicksHistory;
+    unsubscribeQuotes: BinaryAPI['unsubscribeQuotes'];
     getQuotes?: TGetQuotes;
+    subscribeQuotes?: TSubscribeQuotes;
     id?: string;
     getMarketsOrder?: (active_symbols: ActiveSymbols) => string[];
     getIndicatorHeightRatio?: TGetIndicatorHeightRatio;
@@ -235,7 +233,7 @@ export type TChartProps = {
     scrollToEpoch?: number | null;
     clearChart?: () => void;
     shouldFetchTradingTimes?: boolean;
-    shouldFetchTickHistory?: boolean;
+    shouldFetchGetQuotes?: boolean;
     allowTickChartTypeOnly?: boolean;
     allTicks?: NonNullable<AuditDetailsForExpiredContract>['all_ticks'];
     contractInfo?: ProposalOpenContract;
@@ -245,7 +243,6 @@ export type TChartProps = {
     yAxisMargin?: { bottom: number; top: number };
     enableScroll?: boolean | null;
     enableZoom?: boolean | null;
-    initialData?: TInitialChartData;
     chartData?: TInitialChartData;
     networkStatus?: TNetworkConfig;
     refreshActiveSymbols?: ChartState['refreshActiveSymbols'];

@@ -4,7 +4,7 @@ import {
     TChartControlsWidgets,
     TChartProps,
     TGetIndicatorHeightRatio,
-    TgetTicksHistory,
+    TGetQuotes,
     TGranularity,
     TLayout,
     TSettings,
@@ -67,7 +67,7 @@ class ChartState {
     allowTickChartTypeOnly?: boolean;
     isStaticChart? = false;
     shouldFetchTradingTimes = true;
-    shouldFetchTickHistory = true;
+    shouldFetchGetQuotes = true;
     allTicks: NonNullable<AuditDetailsForExpiredContract['all_ticks']> = [];
     contractInfo: ProposalOpenContract = {};
     refreshActiveSymbols?: boolean;
@@ -83,7 +83,7 @@ class ChartState {
     tradingTimes: string | null = null;
     activeSymbols: string | null = null;
     masterData: string | null = null;
-    getTicksHistory?: TgetTicksHistory;
+    getQuotes?: TGetQuotes;
     chartControlsWidgets?: TChartControlsWidgets;
     enabledChartFooter?: boolean;
 
@@ -127,7 +127,7 @@ class ChartState {
             shouldMinimiseLastDigits: observable,
             isStaticChart: observable,
             shouldFetchTradingTimes: observable,
-            shouldFetchTickHistory: observable,
+            shouldFetchGetQuotes: observable,
             allTicks: observable,
             contractInfo: observable,
             refreshActiveSymbols: observable,
@@ -185,7 +185,7 @@ class ChartState {
         scrollToEpoch,
         settings,
         shouldFetchTradingTimes = true,
-        shouldFetchTickHistory = true,
+        shouldFetchGetQuotes = true,
         should_zoom_out_on_yaxis,
         allTicks = [],
         contractInfo = {},
@@ -244,7 +244,7 @@ class ChartState {
             this.masterData = JSON.stringify(chartData.masterData);
             if (this.mainStore.chart.feed) {
                 this.mainStore.chart.feed.updateQuotes(chartData.masterData, false);
-                this.shouldFetchTickHistory = false;
+                this.shouldFetchGetQuotes = false;
             }
         }
 
@@ -258,7 +258,7 @@ class ChartState {
         this.has_updated_settings = !isDeepEqual(this.settings?.whitespace, settings?.whitespace);
         this.settings = settings;
         this.shouldFetchTradingTimes = shouldFetchTradingTimes;
-        this.shouldFetchTickHistory = shouldFetchTickHistory;
+        this.shouldFetchGetQuotes = shouldFetchGetQuotes;
         this.allowTickChartTypeOnly = allowTickChartTypeOnly;
         this.allTicks = allTicks;
         this.contractInfo = contractInfo;

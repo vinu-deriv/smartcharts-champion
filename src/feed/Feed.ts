@@ -1,16 +1,14 @@
 /* eslint-disable eqeqeq */
-import { HistoryRequest, ProposalOpenContract } from 'src/types/api-types';
 import EventEmitter from 'event-emitter-es6';
 import { reaction } from 'mobx';
 import { BinaryAPI, TradingTimes } from 'src/binaryapi';
-import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
-import { Listener, TError, TgetTicksHistoryResult, TGranularity, TMainStore, TPaginationCallback, TQuote } from 'src/types';
+import { Listener, TError, TGetQuotesResult, TGranularity, TMainStore, TPaginationCallback, TQuote, TGetQuotesRequest, ProposalOpenContract } from 'src/types';
 import { strToDateTime } from 'src/utils/date';
 import { getUTCDate } from '../utils';
 import ServerTime from '../utils/ServerTime';
 import { DelayedSubscription, RealtimeSubscription } from './subscription';
 import { TQuoteResponse } from './subscription/Subscription';
-import { TickHistoryFormatter } from './TickHistoryFormatter';
+import { QuoteFormatter } from './QuoteFormatter';
 
 type TPaginationParams = {
     granularity: TGranularity;
@@ -54,8 +52,8 @@ class Feed {
     get allTicks() {
         return this._mainStore.state.allTicks;
     }
-    get shouldFetchTickHistory() {
-        return this._mainStore.state.shouldFetchTickHistory || false;
+    get shouldFetchGetQuotes() {
+        return this._mainStore.state.shouldFetchGetQuotes || false;
     }
     get contractInfo() {
         return this._mainStore.state.contractInfo;
@@ -246,7 +244,7 @@ class Feed {
         }
 
         // Check if we already have quotes from masterData in chartData
-        if (this.quotes && this.quotes.length > 0 && !this.shouldFetchTickHistory) {
+        if (this.quotes && this.quotes.length > 0 && !this.shouldFetchGetQuotes) {
             const quotes = this._trimQuotes(this.quotes);
             callback({ quotes });
             this._emitDataUpdate(quotes, true);
@@ -254,9 +252,9 @@ class Feed {
             return;
         }
 
-        const tickHistoryRequest: Partial<TCreateHistoryParams> = {
+        const getQuotesRequest: Partial<TGetQuotesRequest> = {
             symbol,
-            granularity: granularity as HistoryRequest['granularity'],
+            granularity: granularity as TGetQuotesRequest['granularity'],
             start,
             count: this.endEpoch ? undefined : this._mainStore.lastDigitStats.count,
         };
@@ -265,7 +263,7 @@ class Feed {
         let quotes: TQuote[] | undefined;
         if (end) {
             // When there is end; no streaming required
-            tickHistoryRequest.end = String(end);
+            getQuotesRequest.end = String(end);
             getHistoryOnly = true;
         } else if (validation_error !== 'MarketIsClosed' && validation_error !== 'MarketIsClosedTryVolatility') {
             let subscription: DelayedSubscription | RealtimeSubscription;
@@ -273,14 +271,14 @@ class Feed {
             if (delay > 0) {
                 this._mainStore.notifier.notifyDelayedMarket(symbolName, delay);
                 subscription = new DelayedSubscription(
-                    tickHistoryRequest as TCreateHistoryParams,
+                    getQuotesRequest as TGetQuotesRequest,
                     this._binaryApi,
                     delay,
                     this._mainStore
                 );
             } else {
                 subscription = new RealtimeSubscription(
-                    tickHistoryRequest as TCreateHistoryParams,
+                    getQuotesRequest as TGetQuotesRequest,
                     this._binaryApi,
                     this._mainStore
                 );
@@ -326,9 +324,9 @@ class Feed {
             getHistoryOnly = true;
         }
         if (getHistoryOnly) {
-            if (this._mainStore.state.getTicksHistory) {
-                // Use getTicksHistory prop to get tick history data
-                const result = await this._mainStore.state.getTicksHistory({
+            if (this._mainStore.state.getQuotes) {
+                // Use getQuotes prop to get tick history data
+                const result = await this._mainStore.state.getQuotes({
                     symbol,
                     granularity: granularity as number,
                     count: this.endEpoch ? 1000 : this._mainStore.lastDigitStats.count,
@@ -354,18 +352,18 @@ class Feed {
                 } else {
                     quotes = [];
                 }
-            } else if (this.shouldFetchTickHistory || !(this.contractInfo as ProposalOpenContract).tick_stream) {
-                const response = await this._binaryApi.getTicksHistory(
-                    tickHistoryRequest as TCreateHistoryParams
+            } else if (this.shouldFetchGetQuotes || !(this.contractInfo as ProposalOpenContract).tick_stream) {
+                const response = await this._binaryApi.getQuotes(
+                    getQuotesRequest as TGetQuotesRequest
                 );
-                quotes = TickHistoryFormatter.formatHistory(response);
+                quotes = QuoteFormatter.formatHistory(response);
             } else {
                 // Passed all_ticks from Deriv-app store modules.contract_replay.contract_store.contract_info.audit_details.all_ticks
                 // Waits for the flutter chart to unmount previous chart
                 const allTicksContract: Feed['allTicks'] = await new Promise(resolve => {
                     setTimeout(() => resolve(this.allTicks), 50);
                 });
-                quotes = TickHistoryFormatter.formatAllTicks(allTicksContract);
+                quotes = QuoteFormatter.formatAllQuotes(allTicksContract);
             }
         }
         if (!quotes) {
@@ -422,9 +420,9 @@ class Feed {
         let firstEpoch: number | undefined;
         if (end > startLimit) {
             try {
-                const response = await this._binaryApi.getTicksHistory({
+                const response = await this._binaryApi.getQuotes({
                     symbol,
-                    granularity: granularity as HistoryRequest['granularity'],
+                    granularity: granularity as TGetQuotesRequest['granularity'],
                     count: `${count}` as any,
                     end: String(end),
                 });
@@ -434,7 +432,7 @@ class Feed {
                     this.setHasReachedEndOfData(true);
                     return;
                 }
-                result.quotes = TickHistoryFormatter.formatHistory(response);
+                result.quotes = QuoteFormatter.formatHistory(response);
                 if (firstEpoch <= startLimit) {
                     callback({ moreAvailable: false, quotes: [] });
                     this.setHasReachedEndOfData(true);
@@ -517,7 +515,7 @@ class Feed {
         this._emitDataUpdate(quotes);
     }
     appendChartDataFromPOCResponse(contract_info: ProposalOpenContract) {
-        const ticks = TickHistoryFormatter.formatPOCTick(contract_info);
+        const ticks = QuoteFormatter.formatPOCQuote(contract_info);
         if (ticks) {
             this._appendChartData(ticks, ticks[0].tick.symbol, true);
         }
@@ -536,7 +534,7 @@ class Feed {
             this._emitter.emit(Feed.EVENT_MASTER_DATA_UPDATE, dataUpdate);
         }
     }
-    static getFirstEpoch(response: TgetTicksHistoryResult) {
+    static getFirstEpoch(response: TGetQuotesResult) {
         if (response.candles && response.candles.length > 0) {
             return response.candles[0].epoch as number;
         }

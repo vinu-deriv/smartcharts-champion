@@ -1,15 +1,14 @@
 import EventEmitter from 'event-emitter-es6';
 import { BinaryAPI } from 'src/binaryapi';
-import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
-import { Listener, TgetTicksHistoryResult, TMainStore, TQuote } from 'src/types';
-import { TickHistoryFormatter } from '../TickHistoryFormatter';
+import { Listener, TGetQuotesRequest, TGetQuotesResult, TMainStore, TQuote } from 'src/types';
+import { QuoteFormatter } from '../QuoteFormatter';
 
-export type TQuoteResponse = { quotes: TQuote[]; response: TgetTicksHistoryResult; error?: unknown };
+export type TQuoteResponse = { quotes: TQuote[]; response: TGetQuotesResult; error?: unknown };
 
 class Subscription {
     _binaryApi: BinaryAPI;
     _emitter: EventEmitter;
-    _request: TCreateHistoryParams;
+    _request: TGetQuotesRequest;
     lastStreamEpoch?: number;
     _mainStore: TMainStore;
     static get EVENT_CHART_DATA() {
@@ -18,11 +17,11 @@ class Subscription {
     get contractInfo() {
         return this._mainStore.state.contractInfo;
     }
-    get shouldFetchTickHistory() {
-        return this._mainStore.state.shouldFetchTickHistory || false;
+    get shouldFetchGetQuotes() {
+        return this._mainStore.state.shouldFetchGetQuotes || false;
     }
 
-    constructor(request: TCreateHistoryParams, api: BinaryAPI, mainStore: TMainStore) {
+    constructor(request: TGetQuotesRequest, api: BinaryAPI, mainStore: TMainStore) {
         this._binaryApi = api;
         this._request = request;
         this._emitter = new EventEmitter({ emitDelay: 0 });
@@ -40,12 +39,12 @@ class Subscription {
 
     async resume() {
         if (this.lastStreamEpoch) {
-            const tickHistoryRequest = {
+            const getQuotesRequest = {
                 ...this._request,
                 start: this.lastStreamEpoch,
             };
 
-            const quotes_and_response = await this._startSubscribe(tickHistoryRequest);
+            const quotes_and_response = await this._startSubscribe(getQuotesRequest);
 
             return quotes_and_response;
         }
@@ -56,13 +55,13 @@ class Subscription {
         this._emitter.off(Subscription.EVENT_CHART_DATA);
     }
 
-    _startSubscribe(_request: TCreateHistoryParams): Promise<TQuoteResponse> {
+    _startSubscribe(_request: TGetQuotesRequest): Promise<TQuoteResponse> {
         throw new Error('Please override!');
     }
 
-    _processTicksHistoryResponse(response: TgetTicksHistoryResult) {
+    _processGetQuotesResponse(response: TGetQuotesResult) {
 
-        const quotes = TickHistoryFormatter.formatHistory(response);
+        const quotes = QuoteFormatter.formatHistory(response);
 
         if (!quotes) {
             const message = `Unexpected response: ${response}`;
@@ -78,7 +77,7 @@ class Subscription {
         this._emitter.on(Subscription.EVENT_CHART_DATA, callback);
     }
 
-    static getLatestEpoch({ candles, history }: TgetTicksHistoryResult) {
+    static getLatestEpoch({ candles, history }: TGetQuotesResult) {
         if (candles) {
             return candles[candles.length - 1].epoch as number;
         }

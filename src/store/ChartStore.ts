@@ -251,16 +251,14 @@ class ChartStore {
         const {
             symbol,
             granularity,
-            requestForget,
-            requestForgetStream,
-            getTicksHistory,
+            unsubscribeQuotes,
             getQuotes,
+            subscribeQuotes,
             isMobile,
             enableRouting,
             onMessage,
             settings,
             onSettingsChange,
-            initialData,
             chartData,
             feedCall,
             isLive,
@@ -270,13 +268,12 @@ class ChartStore {
 
         this.feedCall = feedCall || {};
         this.api = new BinaryAPI(
-            requestForget, 
-            getTicksHistory || (async () => ({
+            unsubscribeQuotes, 
+            getQuotes || (async () => ({
                 candles: [],
                 echo_req: {},
             })), 
-            getQuotes || (() => (() => { /* Empty function */ })), 
-            requestForgetStream
+            subscribeQuotes || (() => (() => { /* Empty function */ })), 
         );
         this.currentLanguage = localStorage.getItem('current_chart_lang') ?? settings?.language?.toLowerCase();
         // trading times and active symbols can be reused across multiple charts
@@ -285,14 +282,14 @@ class ChartStore {
             (ChartStore.tradingTimes = new TradingTimes(this.api, {
                 enable: this.feedCall.tradingTimes,
                 shouldFetchTradingTimes: this.mainStore.state.shouldFetchTradingTimes,
-                tradingTimes: initialData?.tradingTimes || chartData?.tradingTimes,
+                tradingTimes: chartData?.tradingTimes,
             }));
-            
-        // Process active symbols directly from initialData
-        if (initialData?.activeSymbols) {
-            
+
+        const activeSymbols = chartData?.activeSymbols;
+        // Process active symbols directly from chartData
+        if (activeSymbols) {
             // Process and categorize symbols
-            const processedSymbols = processSymbols(initialData.activeSymbols);
+            const processedSymbols = processSymbols(activeSymbols);
             this.processedSymbols = processedSymbols;
             this.categorizedSymbols = categorizeActiveSymbols(processedSymbols);
             

@@ -7,7 +7,7 @@ export type SubscriptionInformation = {
     id: string;
 };
 
-export type HistoryRequest = {
+export type TGetQuotesRequest = {
     symbol: string;
     ticks_history?:string;
     adjust_start_time?: number;
@@ -51,17 +51,6 @@ export type Candles = Array<{
     low?: number;
     open?: number;
 }>;
-
-export type TicksHistoryResponse = {
-    candles?: Candles;
-    history?: History;
-    pip_size?: number;
-    status?: string;
-    error?: {
-        code: string;
-        message: string;
-    };
-};
 
 export type TickSpotData = {
     ask?: number;
@@ -173,10 +162,6 @@ export type AuditDetailsForExpiredContract = {
     }>;
 };
 
-export type ActiveSymbolsResponse = {
-    active_symbols: ActiveSymbols;
-}
-
 export type TServerTime = {
     time: number;
 };
@@ -212,22 +197,11 @@ export type TradingTimesResponse = {
     };
 };
 
-export type PingResponse = {
-    ping?: string;
-    req_id?: number;
-    error?: {
-        code: string;
-        message: string;
-    };
-};
-
-
-
 export type OHLCStreamResponse = {
     ohlc: {
         close: string;
         epoch: number;
-        granularity: HistoryRequest['granularity'];
+        granularity: TGetQuotesRequest['granularity'];
         high: string;
         id: string;
         low: string;
@@ -238,7 +212,7 @@ export type OHLCStreamResponse = {
 };
 
 
-export type TGranularity = 0 | HistoryRequest['granularity'];
+export type TGranularity = 0 | TGetQuotesRequest['granularity'];
 
 
 export type TError = {

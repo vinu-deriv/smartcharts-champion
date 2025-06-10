@@ -1,9 +1,16 @@
 import { PendingPromise } from '@deriv-com/smartcharts';
-import { PingResponse } from 'src/types/api-types';
 import { TNetworkConfig, TRequestAPI } from 'src/types';
 // eslint-disable-line import/no-extraneous-dependencies,import/no-unresolved
 
 type TOnStatusUpdated = (config: TNetworkConfig, is_online: boolean) => void;
+type PingResponse = {
+    ping?: string;
+    req_id?: number;
+    error?: {
+        code: string;
+        message: string;
+    };
+};
 
 class NetworkMonitor {
     static _instance: NetworkMonitor;

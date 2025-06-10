@@ -1,9 +1,8 @@
-import { TickSpotData } from 'src/types/api-types';
+import { TGetQuotesRequest, TickSpotData } from 'src/types/api-types';
 import { action, computed, observable, when, makeObservable } from 'mobx';
-import { TCreateHistoryParams } from 'src/binaryapi/BinaryAPI';
 import Context from 'src/components/ui/Context';
 import MainStore from '.';
-import { TBar, TgetTicksHistoryResult, TQuote } from '../types';
+import { TBar, TGetQuotesResult, TQuote } from '../types';
 
 export default class LastDigitStatsStore {
     mainStore: MainStore;
@@ -67,7 +66,7 @@ export default class LastDigitStatsStore {
         return this.mainStore.state.shouldMinimiseLastDigits;
     }
 
-    async updateLastDigitStats(response?: TgetTicksHistoryResult) {
+    async updateLastDigitStats(response?: TGetQuotesResult) {
         if (!this.context || !this.mainStore.chart.currentActiveSymbol) return;
         this.digits = [];
         this.bars = [];
@@ -77,13 +76,13 @@ export default class LastDigitStatsStore {
             this.bars.push({ height: 0, cName: '' });
         }
 
-        const tickHistory =
+        const quotes =
             response ||
-            (await this.api?.getTicksHistory({
+            (await this.api?.getQuotes({
                 symbol: this.mainStore.chart.currentActiveSymbol.symbol,
                 count: this.count,
-            } as TCreateHistoryParams));
-        this.latestData = tickHistory?.history?.prices ? tickHistory.history.prices : [];
+            } as TGetQuotesRequest));
+        this.latestData = quotes?.history?.prices ? quotes.history.prices : [];
 
         if (!this.context || !this.mainStore.chart.currentActiveSymbol) return;
         this.latestData.forEach(price => {

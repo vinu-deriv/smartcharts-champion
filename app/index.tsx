@@ -21,12 +21,12 @@ import moment from 'moment';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { TNotification } from 'src/store/Notifier';
-import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener, ProposalOpenContract, HistoryRequest, ActiveSymbols  } from 'src/types';
+import { TGranularity, TNetworkConfig, TQuote, TRefData, TStateChangeListener, ProposalOpenContract, TGetQuotesRequest, ActiveSymbols  } from 'src/types';
 import 'url-search-params-polyfill';
 import './app.scss';
 import ChartHistory from './ChartHistory';
 import ChartNotifier from './ChartNotifier';
-import { ConnectionManager, StreamManager, getTicksHistory, setConnectionManager } from './connection';
+import { ConnectionManager, StreamManager, getQuotes, setConnectionManager } from './connection';
 import NetworkMonitor from './connection/NetworkMonitor';
 import Notification from './Notification';
 
@@ -75,7 +75,7 @@ const connectionManager = new ConnectionManager({
     endpoint: serverUrl,
 });
 
-// Set the connection manager instance for getTicksHistory
+// Set the connection manager instance for getQuotes
 setConnectionManager(connectionManager);
 const IntervalEnum = {
     second: 1,
@@ -114,11 +114,11 @@ const tradingTimesPromise = connectionManager.send({ trading_times: 'today' });
 const activeSymbolsPromise = connectionManager.send({ active_symbols: 'brief' });
 
 
-// Create getQuotes function for subscribing to real-time quotes
+// Create subscribeQuotes function for subscribing to real-time quotes
 // Store subscription IDs for each subscription
 const subscriptionIds: Record<string, string | undefined> = {};
 
-const getQuotes = ({ symbol, granularity, style }: { symbol: string; granularity?: number; style?: string }, callback: (quote: TQuote) => void): (() => void) => {
+const subscribeQuotes = ({ symbol, granularity, style }: { symbol: string; granularity?: number; style?: string }, callback: (quote: TQuote) => void): (() => void) => {
     
     // Create a subscription request with all required fields
     const request: any = {
@@ -199,8 +199,8 @@ const getQuotes = ({ symbol, granularity, style }: { symbol: string; granularity
 };
 const requestAPI = connectionManager.send.bind(connectionManager);
 
-// Modified requestForget to handle subscription IDs
-const requestForget = (request?: HistoryRequest) => {
+// Modified unsubscribeQuotes to handle subscription IDs
+const unsubscribeQuotes = (request?: TGetQuotesRequest) => {
     // Extract symbol and granularity from the request to create the key
     if(!request?.symbol) return;
     const { symbol, granularity = 0, ticks_history='' } = request;
@@ -458,7 +458,7 @@ const App = () => {
             topWidgets={renderTopWidgets}
             toolbarWidget={renderToolbarWidget}
             chartControlsWidgets={renderControls}
-            requestForget={requestForget}
+            unsubscribeQuotes={unsubscribeQuotes}
             endEpoch={endEpoch}
             chartType={chartType}
             granularity={granularity}
@@ -470,13 +470,9 @@ const App = () => {
             isLive
             enabledChartFooter
             contractInfo={contractInfo}
-            feedCall={{ activeSymbols: false, tradingTimes: false }}
-            initialData={{ 
-                activeSymbols,
-            }}
             chartData={{tradingTimes, activeSymbols}}
-            getTicksHistory={getTicksHistory}
             getQuotes={getQuotes}
+            subscribeQuotes={subscribeQuotes}
             getIndicatorHeightRatio={(chart_height: number, indicator_count: number) => {
                 const isSmallScreen = chart_height < 780;
                 const denominator = indicator_count >= 5 ? indicator_count : indicator_count + 1;

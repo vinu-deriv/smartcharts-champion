@@ -90,18 +90,12 @@ class App extends React.Component {
     render() {
         return (
             <SmartChart
-                // For handling tick history data
-                getTicksHistory={({ symbol, granularity, count, start, end, style }) => Promise}
+                // For handling history data
+                getQuotes={({ symbol, granularity, count, start, end, style }) => Promise}
                 // For subscribing to real-time quotes
-                getQuotes={({ symbol, granularity }, callback) => unsubscribeFunction}
+                subscribeQuotes={({ symbol, granularity }, callback) => unsubscribeFunction}
                 // For forgetting subscriptions
-                requestForget={(request) => {}}
-                // Optional: Pass prepared data to make chart render faster on initial load
-                initialData={{
-                    activeSymbols: [...],
-                    tradingTimes: {...},
-                    masterData: [...]
-                }}
+                unsubscribeQuotes={(request) => {}}
                 // Optional: Pass chart data for updates
                 chartData={{
                     tradingTimes: {...},
@@ -115,7 +109,7 @@ class App extends React.Component {
 };
 ```
 
-SmartCharts expects library user to provide `getTicksHistory`, `getQuotes` and `requestForget`. Refer to [API](#api) for more details.
+SmartCharts expects library user to provide `getQuotes`, `subscribeQuotes` and `unsubscribeQuotes`. Refer to [API](#api) for more details.
 
 The job of loading the active symbols or trading times or stream data from cache or retrieving from websocket is therefore NOT the responsibility of SmartCharts but the host application. SmartCharts simply makes the requests and expect a response in return.
 
@@ -147,15 +141,14 @@ Props marked with `*` are **mandatory**:
 
 | Props                     | Description                                                                                                                                                                                                                                                                                                                                                      |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| getTicksHistory\*         | Function to fetch historical tick data. Expects parameters `{ symbol, granularity, count, start?, end?, style? }` and returns a Promise with candles or history data.                                                                                                                                                                                            |
-| getQuotes\*               | Function to subscribe to real-time quotes. Expects parameters `({ symbol, granularity }, callback)` and returns an unsubscribe function.                                                                                                                                                                                                                         |
-| requestForget\*           | When SmartCharts no longer needs a subscription, it will call this method (passing in the request object) to halt the subscription.                                                                                                                                                                                                                              |
+| getQuotes\*         | Function to fetch historical tick data. Expects parameters `{ symbol, granularity, count, start?, end?, style? }` and returns a Promise with candles or history data.                                                                                                                                                                                            |
+| subscribeQuotes\*               | Function to subscribe to real-time quotes. Expects parameters `({ symbol, granularity }, callback)` and returns an unsubscribe function.                                                                                                                                                                                                                         |
+| unsubscribeQuotes\*           | When SmartCharts no longer needs a subscription, it will call this method (passing in the request object) to halt the subscription.                                                                                                                                                                                                                              |
 | id                        | Uniquely identifies a chart's indicators, symbol and layout; saving them to local storage and loading them when page refresh. If not set, SmartCharts renders a fresh chart with default values on each refresh. Defaults to `undefined`.                                                                                                           |
 | getMarketsOrder           | Callback function to set/order the active symbols category. `active_symbols` is passed to the callback and an array of markets is expected in return. Allowed values are `forex`, `basket_index`, `indices`, `stocks`, `commodities`, `synthetic_index` and `cryptocurrency`. Defaults to `undefined`                                                                                                 |
 | getIndicatorHeightRatio           | Callback function to set/order the height of the active indicators that attach to the bottom of the chart. The chart pass two parameters, `chart_height` and `indicator_count` and the callback should return an object that contains two parameters, `height` and `percent` which `height` present the height of each indicator in pixel and the `percent` present the percentage of height compare to chart height. Example:  `getIndicatorHeightRatio: (chart_height, indicator_count) => ({height, percent})` . Defaults to `undefined`                                                                                       |
-| symbol                    | Sets the main chart symbol. Defaults to `R_100`. Refer [Props vs UI](#props-vs-ui) for usage details.                                                                                                                                                                                                                                                            |
-| initialData               | Set initial data that the library requires for booting up. Refer [initialData](#initial-data) for usage details.                                                                                                                                                                                                                                                      |
-| chartData                 | Pass chart data for updates. Similar structure to initialData but used for updating the chart after initial load. Default is `undefined`.                                                                                                                                                                                                                         |
+| symbol                    | Sets the main chart symbol. Defaults to `R_100`. Refer [Props vs UI](#props-vs-ui) for usage details.                                                                                                                                                                                                                                                            |                                                                                                                                                                                                                                                  |
+| chartData                 | Pass chart data for updates. Default is `undefined`.                                                                                                                                                                                                                         |
 | feedCall                  | Enable/Disable the feed call for getting requirement resources. Default is `{activeSymbols: true,tradingTimes: true}`                                                                                                                                                                                                                                             |
 | granularity               | Sets the granularity of the chart. Allowed values are 60, 120, 180, 300, 600, 900, 1800, 3600, 7200, 14400, 28800, 86400. Defaults to 0. Refer [Props vs UI](#props-vs-ui) for usage details.                                                                                                                                                                    |
 | chartType                 | Sets the chartType. Choose between `mountain` (Line), `line` (Dot), `colored_line` (Colored Dot), `spline`, `baseline`, `candle`, `colored_bar` (OHLC), `hollow_candle`, `heikinashi`, `kagi`, `linebreak`, `renko`, `rangebars`, and `pandf` (Point & Figure). Defaults to `mountain`. Refer [Props vs UI](#props-vs-ui) for usage details.                     |
@@ -184,7 +177,7 @@ Props marked with `*` are **mandatory**:
 | shouldDrawTicksFromContractInfo         | Determine whether SmartCharts should draw ticks on the chart based on `contractInfo` object, which contains data from `proposal_open_contract` API response, instead of ticks from `ticks_history` API response. Should be used together with `contractInfo` prop described above, otherwise `ticks_history` API response will be used for drawing ticks as usual. Defaults to `false`.                                                                                                                                                                                                                                                   |
 | shouldFetchTradingTimes   | Determine whether an API call for fetching trading times is necessary for the new chart or not. Defaults to `true`                                                                                                                                                                                                                                                   |
 | should_zoom_out_on_yaxis  | Forces y-axis to zoom out. Overrides `top` and `bottom` values of `yAxisMargin` prop. Defaults to `undefined`.                                                                                                                                                                                                                                                   |
-| shouldFetchTickHistory    | Determine whether an API call for fetching tick history is necessary for the new chart or not. Defaults to `true`                                                                                                                                                                                                                                                   |
+| shouldFetchGetQuotes    | Determine whether an API call for fetching tick history is necessary for the new chart or not. Defaults to `true`                                                                                                                                                                                                                                                   |
 | allTicks                  | Provides all_ticks contract data for chart rendering when contract with duration = 'ticks' . Defaults to `undefined`                                                                                                                                                                                                                                              |
 | maxTick                   | Set the max number of first points/candles in the visible chart area. The value should be number greater than zero. Defaults to `undefined`                                                                                                                                                                                                                      |
 | crosshair                 | Set state of Crosshair Component. Allowed values are undefined, 0,1,2. Defaults to `undefined`                                                                                                                                                                                                                                                                   |
@@ -206,10 +199,6 @@ Props marked with `*` are **mandatory**:
 | isHighestLowestMarkerEnabled | Show or hide the highest and lowest tick on the chart. Defaults to `false`.                                                           |
 | whitespace                    | The default width of whitespace between the right edge of the chart and the y-axis. It should be used in combination with `minimumLeftBars` setting value. For more details, please refer to stxx.preferences.whitespace in CIQ documentation. Defaults to `undefined`.                                                                                                  |
 
-#### InitialData
-
-Initial data property designed to pass prepared chart data in case you don't want to wait for Feed data or if you simply want to make the chart render quicker on its initial load. It gets the properties below and all of them are optional, so if you pass the data, the chart will use that data, but if you pass `null` instead, the chart will default to the Feed call and get the data from API.
-**notice:** these data are only use for initialing sequence and after that, chart request on Feed to get data.
 | Attribute | Description | Sample Data |
 | --- | --- | --- |
 | activeSymbols | An array of active symbols (available markets) is used to load the market selector. Default is `null`. This value would update in the chart is user toggle property of `refreshActiveSymbols` that cause the chart to request for activeSymbols on the Feed | `[{ allow_forward_starting: 0, display_name: 'AUD Basket', exchange_is_open: 1, is_trading_suspended: 0, market: 'basket_index', market_display_name: 'Basket Indices', pip: 0.001, submarket: 'forex_basket', submarket_display_name: 'Forex Basket', symbol: 'WLDAUD', symbol_type: 'forex_basket' }, ...]`
@@ -279,7 +268,7 @@ When working with the StreamManager.ts file, you might encounter TypeScript erro
    - Already used in the file with `as unknown as Type`
    - This is a two-step assertion that first converts to `unknown` and then to the desired type
    ```typescript
-   (data.echo_req as unknown) as HistoryRequest
+   (data.echo_req as unknown) as TGetQuotes
    ```
 
 4. **Using the `any` type**:
@@ -348,7 +337,7 @@ const dummyMasterData = [
 
 const ChartExample = () => {
   // Function to fetch historical tick data
-  const getTicksHistory = ({ symbol, granularity, count, start, end, style }) => {
+  const getQuotes = ({ symbol, granularity, count, start, end, style }) => {
     console.log('Fetching tick history for:', { symbol, granularity, count, start, end, style });
     
     // Return a promise that resolves with candles or history data
@@ -375,7 +364,7 @@ const ChartExample = () => {
   };
 
   // Function to subscribe to real-time quotes
-  const getQuotes = ({ symbol, granularity }, callback) => {
+  const subscribeQuotes = ({ symbol, granularity }, callback) => {
     console.log('Subscribing to quotes for:', { symbol, granularity });
     
     // Simulate real-time updates with an interval
@@ -402,7 +391,7 @@ const ChartExample = () => {
   };
 
   // Function to forget subscriptions
-  const requestForget = (request) => {
+  const unsubscribeQuotes = (request) => {
     console.log('Forgetting subscription for:', request);
     // In a real implementation, you would handle unsubscribing from the WebSocket here
   };
@@ -426,13 +415,9 @@ const ChartExample = () => {
     <SmartChart
       id="example-chart"
       symbol="frxAUDJPY"
-      getTicksHistory={getTicksHistory}
       getQuotes={getQuotes}
-      requestForget={requestForget}
-      initialData={{
-        activeSymbols: dummyActiveSymbols,
-        tradingTimes: dummyTradingTimes,
-      }}
+      subscribeQuotes={subscribeQuotes}
+      unsubscribeQuotes={unsubscribeQuotes}
       chartType="candle"
       granularity={60} // 1-minute candles
       getIndicatorHeightRatio={getIndicatorHeightRatio}
@@ -451,14 +436,13 @@ In this example:
 
 1. We define dummy data for active symbols, trading times, and historical candles.
 2. We implement the required functions:
-   - `getTicksHistory`: Returns historical data for the chart
-   - `getQuotes`: Subscribes to real-time quotes and returns an unsubscribe function
-   - `requestForget`: Handles unsubscribing from data streams
+   - `getQuotes`: Returns historical data for the chart
+   - `subscribeQuotes`: Subscribes to real-time quotes and returns an unsubscribe function
+   - `unsubscribeQuotes`: Handles unsubscribing from data streams
    - `getIndicatorHeightRatio`: Calculates the height for indicators
 3. We configure the SmartChart component with various props:
    - `id`: A unique identifier for the chart
    - `symbol`: The trading symbol to display
-   - `initialData`: Prepopulated data for faster initial rendering
    - `chartType`: Set to "candle" for candlestick chart
    - `granularity`: Set to 60 for 1-minute candles
    - Other configuration options for appearance and behavior
