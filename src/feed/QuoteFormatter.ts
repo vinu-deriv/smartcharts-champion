@@ -1,9 +1,8 @@
-import { TicksHistoryResponse, TicksStreamResponse, ProposalOpenContract } from '@deriv/api-types';
-import { OHLCStreamResponse, TAllTicks, TQuote } from 'src/types';
+import { TAllTicks, TGetQuotesResult, TQuote, ProposalOpenContract } from 'src/types';
 import { getUTCDate, lerp } from '../utils';
 
-export class TickHistoryFormatter {
-    static formatHistory(response: TicksHistoryResponse): TQuote[] | undefined {
+export class QuoteFormatter {
+    static formatHistory(response: TGetQuotesResult): TQuote[] | undefined {
         const { history, candles } = response;
         if (history) {
             const { times = [], prices = [] } = history;
@@ -30,7 +29,7 @@ export class TickHistoryFormatter {
         return undefined;
     }
 
-    static formatTick(response: TicksStreamResponse | OHLCStreamResponse): TQuote | undefined {
+    static formatQuote(response: TQuote): TQuote | undefined {
         if ('tick' in response) {
             const { tick } = response as Required<typeof response>;
             const t = tick as Required<typeof tick>;
@@ -45,21 +44,23 @@ export class TickHistoryFormatter {
         }
 
         if ('ohlc' in response) {
-            const { ohlc } = response as OHLCStreamResponse;
-            return {
-                Date: getUTCDate(+ohlc.open_time),
-                Open: +ohlc.open,
-                High: +ohlc.high,
-                Low: +ohlc.low,
-                Close: +ohlc.close,
-                ohlc,
-            };
+            const { ohlc } = response as TQuote;
+            if (ohlc) {
+                return {
+                    Date: getUTCDate(+ohlc.open_time),
+                    Open: +ohlc.open,
+                    High: +ohlc.high,
+                    Low: +ohlc.low,
+                    Close: +ohlc.close,
+                    ohlc,
+                };
+            }
         }
 
         return undefined;
     }
-    static formatAllTicks(allTicksContract: TAllTicks): TQuote[] | undefined {
-        const getNearestTick = (index: number): number => {
+    static formatAllQuotes(allTicksContract: TAllTicks): TQuote[] | undefined {
+        const getNearestQuote = (index: number): number => {
             const nextItem = allTicksContract?.[index + 1];
             const prevItem = allTicksContract?.[index - 1];
             return prevItem?.tick && nextItem?.tick
@@ -68,10 +69,10 @@ export class TickHistoryFormatter {
         };
         return allTicksContract?.map((res, index: number) => ({
             Date: getUTCDate(+(res.epoch as number)),
-            Close: +(res.tick || getNearestTick(index)),
+            Close: +(res.tick || getNearestQuote(index)),
         }));
     }
-    static formatPOCTick(contract_info: ProposalOpenContract) {
+    static formatPOCQuote(contract_info: ProposalOpenContract) {
         const { tick_stream = [], underlying = '' } = contract_info || {};
         if (tick_stream.length && underlying) {
             return tick_stream.map(({ epoch = 0, tick, tick_display_value }) => ({

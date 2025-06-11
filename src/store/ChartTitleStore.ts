@@ -38,7 +38,7 @@ export default class ChartTitleStore {
             setSymbol: action.bound,
             update: action.bound,
             hidePrice: action.bound,
-            updateProps: action.bound
+            updateProps: action.bound,
         });
 
         this.mainStore = mainStore;

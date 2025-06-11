@@ -447,7 +447,6 @@ export default class ChartAdapterStore {
         runInAction(() => {
             this.mainStore.chart.lastQuote = quote;
         });
-
         if (quote.ohlc) {
             this.flutterChart?.feed.onNewCandle(quote);
         } else if (this.getGranularityInMs() < 60000) {

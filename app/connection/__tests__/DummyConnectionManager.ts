@@ -1,7 +1,6 @@
-import { TicksStreamResponse } from '@deriv/api-types';
 import EventEmitter from 'event-emitter-es6';
 import sinon from 'sinon';
-import { IPendingPromise, Listener, TBinaryAPIResponse } from 'src/types';
+import { IPendingPromise, Listener, TBinaryAPIResponse, TicksStreamResponse } from 'src/types';
 import PendingPromise from '../../../src/utils/PendingPromise';
 
 export class DummyConnectionManager extends EventEmitter {

@@ -1,9 +1,8 @@
-import { TicksHistoryResponse, TickSpotData, TicksStreamResponse } from '@deriv/api-types';
+import { TGetQuotesRequest, TickSpotData } from 'src/types/api-types';
 import { action, computed, observable, when, makeObservable } from 'mobx';
-import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
 import Context from 'src/components/ui/Context';
 import MainStore from '.';
-import { TBar } from '../types';
+import { TBar, TGetQuotesResult, TQuote } from '../types';
 
 export default class LastDigitStatsStore {
     mainStore: MainStore;
@@ -67,7 +66,7 @@ export default class LastDigitStatsStore {
         return this.mainStore.state.shouldMinimiseLastDigits;
     }
 
-    async updateLastDigitStats(response?: TicksHistoryResponse) {
+    async updateLastDigitStats(response?: TGetQuotesResult) {
         if (!this.context || !this.mainStore.chart.currentActiveSymbol) return;
         this.digits = [];
         this.bars = [];
@@ -77,13 +76,13 @@ export default class LastDigitStatsStore {
             this.bars.push({ height: 0, cName: '' });
         }
 
-        const tickHistory =
+        const quotes =
             response ||
-            (await this.api?.getTickHistory({
+            (await this.api?.getQuotes({
                 symbol: this.mainStore.chart.currentActiveSymbol.symbol,
                 count: this.count,
-            } as TCreateTickHistoryParams));
-        this.latestData = tickHistory?.history?.prices ? tickHistory.history.prices : [];
+            } as TGetQuotesRequest));
+        this.latestData = quotes?.history?.prices ? quotes.history.prices : [];
 
         if (!this.context || !this.mainStore.chart.currentActiveSymbol) return;
         this.latestData.forEach(price => {
@@ -92,7 +91,7 @@ export default class LastDigitStatsStore {
         });
         this.updateBars();
     }
-    onMasterDataUpdate({ Close, tick }: TicksStreamResponse & { Close: number }) {
+    onMasterDataUpdate({ Close, tick }: TQuote & { Close: number }) {
         if (!this.context || !this.mainStore.chart.currentActiveSymbol || !this.mainStore.lastDigitStats.isVisible) return;
         this.lastTick = tick;
         if (this.marketDisplayName !== this.lastSymbol) {

@@ -1,87 +1,91 @@
 import {
-    ActiveSymbolsResponse,
-    ServerTimeResponse,
-    TicksHistoryRequest,
-    TicksHistoryResponse,
-    TradingTimesResponse,
-} from '@deriv/api-types';
-import {
-    TBinaryAPIRequest,
+    TGetQuotes,
+    TSubscribeQuotes,
+    TGetQuotesRequest,
+    TGetQuotesResult,
     TGranularity,
-    TRequestAPI,
-    TRequestForget,
-    TRequestForgetStream,
-    TRequestSubscribe,
+    TUnsubscribeQuotes,
     TResponseAPICallback,
 } from 'src/types';
 
-type TicksHistoryRequestPartial = Omit<TicksHistoryRequest, 'count' | 'ticks_history'> & {
-    count?: number;
-};
-
-export type TCreateTickHistoryParams = TicksHistoryRequestPartial & { symbol: string };
 export default class BinaryAPI {
-    requestAPI: TRequestAPI;
-    requestForget: TRequestForget;
-    requestForgetStream?: TRequestForgetStream;
-    requestSubscribe: TRequestSubscribe;
+    unsubscribeQuotes: TUnsubscribeQuotes;
+    _getQuotes: TGetQuotes;
+    _subscribeQuotes: TSubscribeQuotes;
     static get DEFAULT_COUNT() {
         return 1000;
     }
-    streamRequests: Record<string, { request: TBinaryAPIRequest; callback: TResponseAPICallback }> = {};
-    tradingTimesCache: TradingTimesResponse | null = null;
+    streamRequests: Record<string, { request: TGetQuotesRequest; callback: TResponseAPICallback }> = {};
+
 
     constructor(
-        requestAPI: TRequestAPI,
-        requestSubscribe: TRequestSubscribe,
-        requestForget: TRequestForget,
-        requestForgetStream?: TRequestForgetStream
+        unsubscribeQuotes: TUnsubscribeQuotes,
+        getQuotes: TGetQuotes,
+        subscribeQuotes: TSubscribeQuotes,
     ) {
-        this.requestAPI = requestAPI;
-        this.requestSubscribe = requestSubscribe;
-        this.requestForget = requestForget;
-        this.requestForgetStream = requestForgetStream;
+        this.unsubscribeQuotes = unsubscribeQuotes;
+        this._getQuotes = getQuotes;
+        this._subscribeQuotes = subscribeQuotes;
     }
-    getActiveSymbols(): Promise<ActiveSymbolsResponse> {
-        return this.requestAPI({ active_symbols: 'brief' });
-    }
-    getServerTime(): Promise<ServerTimeResponse> {
-        return this.requestAPI({ time: 1 });
-    }
-    async getTradingTimes(trading_times = 'today'): Promise<TradingTimesResponse> {
-        if (this.tradingTimesCache && (this.tradingTimesCache.trading_times as unknown) === trading_times) {
-            return { ...this.tradingTimesCache };
+    /**
+     * Get tick history for a symbol
+     * @param params Parameters for the tick history request
+     * @returns A Promise that resolves to a TGetQuotesResult
+     */
+    async getQuotes(params: TGetQuotesRequest): Promise<TGetQuotesResult> {
+        if (this._getQuotes) {
+            const quotes = await this._getQuotes({
+                symbol: params.symbol,
+                granularity: params.granularity as number,
+                count:
+                    typeof params.count === 'string'
+                        ? parseInt(params.count, 10)
+                        : params.count || BinaryAPI.DEFAULT_COUNT,
+                start: typeof params.start === 'string' ? parseInt(params.start, 10) : params.start,
+                end: typeof params.end === 'string' ? parseInt(params.end, 10) : params.end,
+            });
+
+            if (params.granularity) {
+                return {
+                    candles: quotes.candles,
+                };
+            }
+
+            // For ticks style
+            if (quotes.history && quotes.history.times && quotes.history.prices) {
+                const times = quotes.history.times;
+                const prices = quotes.history.prices;
+                return {
+                    history: {
+                        times,
+                        prices,
+                    },
+                };
+            }
+
+            // If neither candles nor history is available, throw an error
+            throw new Error('Invalid tick history response format');
         }
-        const response = (await this.requestAPI({ trading_times })) as TradingTimesResponse;
-        if (trading_times !== 'today') {
-            this.tradingTimesCache = { ...response };
-        }
-        return response;
+
+        // If no custom getQuotes function is provided, return a default empty response
+        throw new Error('No getQuotes function provided');
     }
-    getTickHistory(params: TCreateTickHistoryParams): Promise<TicksHistoryResponse> {
-        const request = BinaryAPI.createTickHistoryRequest(params);
-        return this.requestAPI(request);
-    }
-    subscribeTickHistory(params: TCreateTickHistoryParams, callback: TResponseAPICallback) {
+    subscribeQuotes(params: TGetQuotesRequest, callback: TResponseAPICallback) {
         const key = this._getKey(params);
-        const request = BinaryAPI.createTickHistoryRequest({ ...params, subscribe: 1 });
+        const request = BinaryAPI.createGetQuotesRequest({ ...params, subscribe: 1 });
         this.streamRequests[key] = { request, callback };
+
         // Send a copy of the request, in case it gets mutated outside
-        this.requestSubscribe({ ...request }, callback);
+        this._subscribeQuotes({ symbol: params.symbol, granularity: params.granularity }, callback);
     }
     forget(params: { symbol: string; granularity: TGranularity }) {
-        const key = this._getKey(params as TCreateTickHistoryParams);
+        const key = this._getKey(params as TGetQuotesRequest);
         if (!this.streamRequests[key]) return;
         const { request, callback } = this.streamRequests[key];
         delete this.streamRequests[key];
-        return this.requestForget(request, callback);
+        return this.unsubscribeQuotes(request, callback);
     }
-    forgetStream(subscription_id: string) {
-        if (this.requestForgetStream && typeof this.requestForgetStream === 'function') {
-            return this.requestForgetStream(subscription_id);
-        }
-    }
-    static createTickHistoryRequest({
+    static createGetQuotesRequest({
         symbol,
         granularity,
         start,
@@ -89,16 +93,17 @@ export default class BinaryAPI {
         subscribe,
         adjust_start_time = 1,
         count,
-    }: TCreateTickHistoryParams) {
-        const request: TicksHistoryRequestPartial & { ticks_history: string } = {
-            ticks_history: symbol,
+    }: TGetQuotesRequest): TGetQuotesRequest {
+        const request: TGetQuotesRequest = {
+            symbol,
             style: granularity ? 'candles' : 'ticks',
-            end: 'latest',
+            start,
+            end,
             count: count || BinaryAPI.DEFAULT_COUNT,
         };
         if (granularity) {
             // granularity will only be set if style=candles
-            request.granularity = +granularity as TicksHistoryRequest['granularity'];
+            request.granularity = +granularity as TGetQuotesRequest['granularity'];
         }
         if (adjust_start_time) {
             request.adjust_start_time = adjust_start_time;
@@ -115,7 +120,7 @@ export default class BinaryAPI {
         }
         return request;
     }
-    _getKey({ symbol, granularity }: TCreateTickHistoryParams) {
+    _getKey({ symbol, granularity }: TGetQuotesRequest) {
         return `${symbol}-${granularity}`;
     }
 }

@@ -4,7 +4,10 @@ import {
     TradingTimesResponse,
     AuditDetailsForExpiredContract,
     ProposalOpenContract,
-} from '@deriv/api-types';
+    TGetQuotesRequest,
+    OHLCStreamResponse,
+    TGranularity,
+} from 'src/types/api-types';
 
 import { TActiveDrawingToolItem, TDrawingCreatedConfig } from 'src/store/DrawToolsStore';
 import { HtmlHTMLAttributes } from 'react';
@@ -12,8 +15,6 @@ import { BinaryAPI } from 'src/binaryapi';
 import { ChartTypes } from 'src/Constant';
 import ChartState from 'src/store/ChartState';
 import { TNotification } from 'src/store/Notifier';
-import { TGranularity } from '.';
-import { OHLCStreamResponse } from './api.types';
 
 declare global {
     interface Window {
@@ -75,19 +76,36 @@ export type TBinaryAPIRequest = {
 };
 
 export type TBinaryAPIResponse = {
-    echo_req: {
+    echo_req?: {
         [k: string]: unknown;
     };
     req_id?: number;
     msg_type: any;
+    active_symbols?: ActiveSymbols;
+    trading_times?: TradingTimesResponse['trading_times'];
+    time?: number;
     [key: string]: unknown;
 };
 
 export type TRequestAPI = (request: TBinaryAPIRequest) => Promise<TBinaryAPIResponse>;
-export type TResponseAPICallback = (response: TBinaryAPIResponse) => void;
-export type TRequestSubscribe = (request: TBinaryAPIRequest, callback: TResponseAPICallback) => void;
-export type TRequestForgetStream = (id: string) => void;
-export type TRequestForget = (request: TBinaryAPIRequest, callback: TResponseAPICallback) => void;
+export type TResponseAPICallback = (response: TQuote) => void;
+export type TUnsubscribeQuotes = (request?: TGetQuotesRequest, callback?: TResponseAPICallback) => void;
+export type TGetQuotesResult = {
+    candles?: Array<{
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        epoch: number;
+    }>;
+    history?: {
+        prices: number[];
+        times: number[];
+    };
+};
+
+export type TGetQuotes = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number; style?: string }) => Promise<TGetQuotesResult>;
+export type TSubscribeQuotes = (params: { symbol: string, granularity: TGranularity}, callback: (quote: TQuote) => void) => (() => void);
 export type TNetworkConfig = {
     class: string;
     tooltip: string;
@@ -154,7 +172,7 @@ export type TGetIndicatorHeightRatio = (chart_height: number, indicator_count: n
 
 export type TInitialChartData = {
     masterData?: TQuote[];
-    tradingTimes?: TradingTimesResponse['trading_times'];
+    tradingTimes?: Record<string, { isOpen: boolean; openTime: string; closeTime: string }>;
     activeSymbols?: ActiveSymbols;
 };
 
@@ -182,10 +200,9 @@ export type TBarrierUpdateProps = {
 
 export type TChartProps = {
     ref: React.RefObject<{ hasPredictionIndicators(): void; triggerPopup(arg: () => void): void }>;
-    requestAPI: BinaryAPI['requestAPI'];
-    requestSubscribe: BinaryAPI['requestSubscribe'];
-    requestForget: BinaryAPI['requestForget'];
-    requestForgetStream?: BinaryAPI['requestForgetStream'];
+    unsubscribeQuotes: BinaryAPI['unsubscribeQuotes'];
+    getQuotes?: TGetQuotes;
+    subscribeQuotes?: TSubscribeQuotes;
     id?: string;
     getMarketsOrder?: (active_symbols: ActiveSymbols) => string[];
     getIndicatorHeightRatio?: TGetIndicatorHeightRatio;
@@ -216,9 +233,9 @@ export type TChartProps = {
     scrollToEpoch?: number | null;
     clearChart?: () => void;
     shouldFetchTradingTimes?: boolean;
-    shouldFetchTickHistory?: boolean;
+    shouldGetQuotes?: boolean;
     allowTickChartTypeOnly?: boolean;
-    allTicks?: keyof AuditDetailsForExpiredContract | [];
+    allTicks?: NonNullable<AuditDetailsForExpiredContract>['all_ticks'];
     contractInfo?: ProposalOpenContract;
     maxTick?: number | null;
     crosshairTooltipLeftAllow?: number | null;
@@ -226,7 +243,6 @@ export type TChartProps = {
     yAxisMargin?: { bottom: number; top: number };
     enableScroll?: boolean | null;
     enableZoom?: boolean | null;
-    initialData?: TInitialChartData;
     chartData?: TInitialChartData;
     networkStatus?: TNetworkConfig;
     refreshActiveSymbols?: ChartState['refreshActiveSymbols'];
@@ -489,7 +505,7 @@ export type TLayout = {
     msPerPx?: number;
 };
 
-export type TAllTicks = Exclude<AuditDetailsForExpiredContract, null>['all_ticks'];
+export type TAllTicks = NonNullable<AuditDetailsForExpiredContract>['all_ticks'];
 
 export type TSettingsParameterType =
     | 'colorpicker'

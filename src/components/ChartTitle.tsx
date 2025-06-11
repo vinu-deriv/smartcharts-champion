@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { TProcessedSymbolItem } from 'src/binaryapi/ActiveSymbols';
+import { TProcessedSymbolItem } from 'src/types/active-symbols.types';
 import { useStores } from 'src/store';
 import { TOpenMarket } from 'src/types';
 import { getSymbolMarketCategory } from 'src/utils';

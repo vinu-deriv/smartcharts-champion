@@ -4,7 +4,7 @@ import {
     TProcessedSymbolItem,
     TSubCategory,
     TSubCategoryDataItem,
-} from 'src/binaryapi/ActiveSymbols';
+} from 'src/types/categorical-display.types';
 import { TDragEvents, TGranularity, TSettingsParameter, TQuote } from 'src/types';
 
 type TGetYAxisScalingParams = (options: {
@@ -352,7 +352,7 @@ export const prepareIndicatorName = (name: string, parameters: TSettingsParamete
             .map(p => {
                 if (p.path === 'movingAverageType' || p.path === 'maType') {
                     return movingAverageShortCode[p.value as keyof typeof movingAverageShortCode];
-                } else if (p.path === 'fieldType') {
+                } if (p.path === 'fieldType') {
                     return fieldTypeShortCode[p.value as keyof typeof fieldTypeShortCode];
                 }
                 if (p.type === 'switch') {
@@ -361,7 +361,7 @@ export const prepareIndicatorName = (name: string, parameters: TSettingsParamete
                 return p.value || p.defaultValue;
             })
             .join(',');
-        return bars ? bars : undefined;
+        return bars || undefined;
     };
 
     const bars = getStudyBars();
@@ -439,17 +439,17 @@ export const lerp = (a: number, b: number, t: number) => {
 };
 
 export const transformStudiesforTheme = (value: any, theme: string) => {
-    if (typeof value == 'string' && (value.startsWith('#') || value.toLowerCase().startsWith('0x'))) {
-        let color = value;
+    if (typeof value === 'string' && (value.startsWith('#') || value.toLowerCase().startsWith('0x'))) {
+        const color = value;
 
         if (theme === 'light' && color === '#FFFFFF') {
             return '#000000';
-        } else if (theme === 'dark' && color === '#000000') {
+        } if (theme === 'dark' && color === '#000000') {
             return '#FFFFFF';
         }
 
         return color;
-    } else if (isLiteralObject(value)) {
+    } if (isLiteralObject(value)) {
         const map = value as Record<string, any>;
         Object.keys(value).forEach(key => {
             map[key] = transformStudiesforTheme(map[key], theme);
@@ -464,9 +464,9 @@ export const transformStudiesforTheme = (value: any, theme: string) => {
 };
 
 export const clone = (obj: any): any => {
-    var copy: any;
+    let copy: any;
 
-    if (null == obj || 'object' != typeof obj) return obj;
+    if (obj == null || typeof obj !== 'object') return obj;
 
     if (obj instanceof Date) {
         copy = new Date();
@@ -476,7 +476,7 @@ export const clone = (obj: any): any => {
 
     if (obj instanceof Array) {
         copy = [];
-        for (var i = 0, len = obj.length; i < len; i++) {
+        for (let i = 0, len = obj.length; i < len; i++) {
             copy[i] = clone(obj[i]);
         }
         return copy;
@@ -484,7 +484,8 @@ export const clone = (obj: any): any => {
 
     if (obj instanceof Object) {
         copy = {};
-        for (var attr in obj) {
+        for (const attr in obj) {
+            // eslint-disable-next-line no-prototype-builtins
             if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
         }
         return copy;

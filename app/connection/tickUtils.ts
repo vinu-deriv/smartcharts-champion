@@ -1,5 +1,4 @@
-import { Candles, History, TicksHistoryResponse } from '@deriv/api-types';
-import { ArrayElement } from 'src/types';
+import { ArrayElement, TGetQuotesResult, Candles, History } from 'src/types';
 
 function getLast<T>(arr: T[]) {
     return arr[arr.length - 1];
@@ -26,7 +25,7 @@ function binarySearch<T>(arr: T[], val: T, cmp: (item: T) => T | number = item =
     return -1;
 }
 
-function mergeTicks(master: Required<History>, patch: Required<History>) {
+function mergeHistory(master: Required<History>, patch: Required<History>) {
     // detemine which comes first:
     let alpha, omega;
     if (+getLast(master.times) > +getLast(patch.times)) {
@@ -90,12 +89,15 @@ function mergeCandles(master: Required<Candles>, patch: Required<Candles>) {
     return alpha.slice(0, alphaEnd).concat(omega.slice(omegaStart, omega.length));
 }
 
-export function mergeTickHistory(master: Required<TicksHistoryResponse>, patch: Required<TicksHistoryResponse>) {
+export function mergeQuotes(master: Required<TGetQuotesResult>, patch: Required<TGetQuotesResult>) {
     const merged = { ...master };
     if (master.candles) {
-        merged.candles = mergeCandles(master.candles as Required<Candles>, patch.candles as Required<Candles>);
+        merged.candles = mergeCandles(
+            master.candles as Required<Candles>,
+            patch.candles as Required<Candles>
+        ) as Required<TGetQuotesResult>['candles'];
     } else {
-        merged.history = mergeTicks(master.history as Required<History>, patch.history as Required<History>);
+        merged.history = mergeHistory(master.history as Required<History>, patch.history as Required<History>);
     }
 
     return merged;

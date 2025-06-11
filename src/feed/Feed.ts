@@ -1,15 +1,14 @@
-import { TicksHistoryRequest, TicksHistoryResponse, ProposalOpenContract } from '@deriv/api-types';
+/* eslint-disable eqeqeq */
 import EventEmitter from 'event-emitter-es6';
 import { reaction } from 'mobx';
 import { BinaryAPI, TradingTimes } from 'src/binaryapi';
-import { TCreateTickHistoryParams } from 'src/binaryapi/BinaryAPI';
-import { Listener, TError, TGranularity, TMainStore, TPaginationCallback, TQuote } from 'src/types';
+import { Listener, TError, TGetQuotesResult, TGranularity, TMainStore, TPaginationCallback, TQuote, TGetQuotesRequest, ProposalOpenContract } from 'src/types';
 import { strToDateTime } from 'src/utils/date';
 import { getUTCDate } from '../utils';
 import ServerTime from '../utils/ServerTime';
 import { DelayedSubscription, RealtimeSubscription } from './subscription';
 import { TQuoteResponse } from './subscription/Subscription';
-import { TickHistoryFormatter } from './TickHistoryFormatter';
+import { QuoteFormatter } from './QuoteFormatter';
 
 type TPaginationParams = {
     granularity: TGranularity;
@@ -53,8 +52,8 @@ class Feed {
     get allTicks() {
         return this._mainStore.state.allTicks;
     }
-    get shouldFetchTickHistory() {
-        return this._mainStore.state.shouldFetchTickHistory || false;
+    get shouldGetQuotes() {
+        return this._mainStore.state.shouldGetQuotes || false;
     }
     get contractInfo() {
         return this._mainStore.state.contractInfo;
@@ -145,16 +144,16 @@ class Feed {
 
         if (index < 0) {
             return this.quotes[0];
-        } else if (index > this.quotes.length - 1) {
+        } if (index > this.quotes.length - 1) {
             return this.quotes[this.quotes.length - 1];
-        } else {
+        } 
             const leftTick = this.quotes[Math.floor(index)];
             const rightTick = this.quotes[Math.ceil(index)];
 
             const distanceToLeft = epoch - leftTick.DT!.getTime();
             const distanceToRight = rightTick.DT!.getTime() - epoch;
             return distanceToLeft <= distanceToRight ? leftTick : rightTick;
-        }
+        
     }
 
     getClosestQuoteIndexForEpoch(epoch: number) {
@@ -162,16 +161,16 @@ class Feed {
 
         if (index < 0) {
             return this.quotes[0];
-        } else if (index > this.quotes.length - 1) {
+        } if (index > this.quotes.length - 1) {
             return this.quotes[this.quotes.length - 1];
-        } else {
+        } 
             const leftTick = this.quotes[Math.floor(index)];
             const rightTick = this.quotes[Math.ceil(index)];
 
             const distanceToLeft = epoch - leftTick.DT!.getTime();
             const distanceToRight = rightTick.DT!.getTime() - epoch;
             return distanceToLeft <= distanceToRight ? Math.floor(index) : Math.ceil(index);
-        }
+        
     }
 
     findEpochIndex(epoch: number): number {
@@ -195,11 +194,11 @@ class Feed {
 
         if (left >= 0 && epoch == this.quotes[left].DT?.getTime()) {
             return left;
-        } else if (right < this.quotes.length && epoch == this.quotes[right].DT?.getTime()) {
+        } if (right < this.quotes.length && epoch == this.quotes[right].DT?.getTime()) {
             return right;
-        } else {
+        } 
             return (left + right) / 2;
-        }
+        
     }
 
     getQuotesInterval() {
@@ -224,16 +223,16 @@ class Feed {
         this.tickQueue = [];
         this.setHasReachedEndOfData(false);
         this.paginationLoader.updateOnPagination(true);
-        const { granularity, symbolObject } = params;
+        const { granularity = 0, symbolObject } = params;
         const key = this._getKey({ symbol, granularity });
-        let start = this.margin && this.startEpoch ? this.startEpoch - this.margin : this.startEpoch;
+        const start = this.margin && this.startEpoch ? this.startEpoch - this.margin : this.startEpoch;
         const end = this.margin && this.endEpoch ? this.endEpoch + this.margin : this.endEpoch;
 
         const symbolName = symbolObject.name;
         this.loader.setState('chart-data');
         if (this._tradingTimes.isFeedUnavailable(symbol)) {
             this._mainStore.notifier.notifyFeedUnavailable(symbolName);
-            let dataCallback: {
+            const dataCallback: {
                 error?: string;
                 suppressAlert?: boolean;
                 quotes: TQuote[];
@@ -243,9 +242,19 @@ class Feed {
             callback(dataCallback);
             return;
         }
-        const tickHistoryRequest: Partial<TCreateTickHistoryParams> = {
+
+        // Check if we already have quotes from masterData in chartData
+        if (this.quotes && this.quotes.length > 0 && !this.shouldGetQuotes) {
+            const quotes = this._trimQuotes(this.quotes);
+            callback({ quotes });
+            this._emitDataUpdate(quotes, true);
+            this.paginationLoader.updateOnPagination(false);
+            return;
+        }
+
+        const getQuotesRequest: Partial<TGetQuotesRequest> = {
             symbol,
-            granularity: granularity as TicksHistoryRequest['granularity'],
+            granularity: granularity as TGetQuotesRequest['granularity'],
             start,
             count: this.endEpoch ? undefined : this._mainStore.lastDigitStats.count,
         };
@@ -254,7 +263,7 @@ class Feed {
         let quotes: TQuote[] | undefined;
         if (end) {
             // When there is end; no streaming required
-            tickHistoryRequest.end = String(end);
+            getQuotesRequest.end = String(end);
             getHistoryOnly = true;
         } else if (validation_error !== 'MarketIsClosed' && validation_error !== 'MarketIsClosedTryVolatility') {
             let subscription: DelayedSubscription | RealtimeSubscription;
@@ -262,14 +271,14 @@ class Feed {
             if (delay > 0) {
                 this._mainStore.notifier.notifyDelayedMarket(symbolName, delay);
                 subscription = new DelayedSubscription(
-                    tickHistoryRequest as TCreateTickHistoryParams,
+                    getQuotesRequest as TGetQuotesRequest,
                     this._binaryApi,
                     delay,
                     this._mainStore
                 );
             } else {
                 subscription = new RealtimeSubscription(
-                    tickHistoryRequest as TCreateTickHistoryParams,
+                    getQuotesRequest as TGetQuotesRequest,
                     this._binaryApi,
                     this._mainStore
                 );
@@ -315,18 +324,46 @@ class Feed {
             getHistoryOnly = true;
         }
         if (getHistoryOnly) {
-            if (this.shouldFetchTickHistory || !(this.contractInfo as ProposalOpenContract).tick_stream) {
-                const response: TicksHistoryResponse = await this._binaryApi.getTickHistory(
-                    tickHistoryRequest as TCreateTickHistoryParams
+            if (this._mainStore.state.getQuotes) {
+                // Use getQuotes prop to get tick history data
+                const result = await this._mainStore.state.getQuotes({
+                    symbol,
+                    granularity: granularity as number,
+                    count: this.endEpoch ? 1000 : this._mainStore.lastDigitStats.count,
+                    start,
+                    end,
+                });
+                
+                // Extract quotes from the result based on whether it's candles or history
+                if (result.candles) {
+                    quotes = result.candles.map(candle => ({
+                        Date: getUTCDate(candle.epoch),
+                        Open: candle.open,
+                        High: candle.high,
+                        Low: candle.low,
+                        Close: candle.close,
+                    }));
+                } else if (result.history) {
+                    const { times = [], prices = [] } = result.history;
+                    quotes = prices.map((price, idx) => ({
+                        Date: getUTCDate(times[idx]),
+                        Close: price,
+                    }));
+                } else {
+                    quotes = [];
+                }
+            } else if (this.shouldGetQuotes || !(this.contractInfo as ProposalOpenContract).tick_stream) {
+                const response = await this._binaryApi.getQuotes(
+                    getQuotesRequest as TGetQuotesRequest
                 );
-                quotes = TickHistoryFormatter.formatHistory(response);
+                quotes = QuoteFormatter.formatHistory(response);
             } else {
                 // Passed all_ticks from Deriv-app store modules.contract_replay.contract_store.contract_info.audit_details.all_ticks
                 // Waits for the flutter chart to unmount previous chart
                 const allTicksContract: Feed['allTicks'] = await new Promise(resolve => {
                     setTimeout(() => resolve(this.allTicks), 50);
                 });
-                quotes = TickHistoryFormatter.formatAllTicks(allTicksContract);
+                quotes = QuoteFormatter.formatAllQuotes(allTicksContract);
             }
         }
         if (!quotes) {
@@ -383,30 +420,19 @@ class Feed {
         let firstEpoch: number | undefined;
         if (end > startLimit) {
             try {
-                const response = await this._binaryApi.getTickHistory({
+                const response = await this._binaryApi.getQuotes({
                     symbol,
-                    granularity: granularity as TicksHistoryRequest['granularity'],
+                    granularity: granularity as TGetQuotesRequest['granularity'],
                     count: `${count}` as any,
                     end: String(end),
                 });
-                if (response.error) {
-                    const { message: text } = response.error as TError;
-                    this.loader.hide();
-                    this._mainStore.notifier.notify({
-                        text: text as string,
-                        type: 'error',
-                        category: 'activesymbol',
-                    });
-                    callback({ error: response.error });
-                    return;
-                }
                 firstEpoch = Feed.getFirstEpoch(response);
                 if (firstEpoch === undefined || firstEpoch === end) {
                     callback({ moreAvailable: false, quotes: [] });
                     this.setHasReachedEndOfData(true);
                     return;
                 }
-                result.quotes = TickHistoryFormatter.formatHistory(response);
+                result.quotes = QuoteFormatter.formatHistory(response);
                 if (firstEpoch <= startLimit) {
                     callback({ moreAvailable: false, quotes: [] });
                     this.setHasReachedEndOfData(true);
@@ -489,7 +515,7 @@ class Feed {
         this._emitDataUpdate(quotes);
     }
     appendChartDataFromPOCResponse(contract_info: ProposalOpenContract) {
-        const ticks = TickHistoryFormatter.formatPOCTick(contract_info);
+        const ticks = QuoteFormatter.formatPOCQuote(contract_info);
         if (ticks) {
             this._appendChartData(ticks, ticks[0].tick.symbol, true);
         }
@@ -508,12 +534,12 @@ class Feed {
             this._emitter.emit(Feed.EVENT_MASTER_DATA_UPDATE, dataUpdate);
         }
     }
-    static getFirstEpoch({ candles, history }: TicksHistoryResponse) {
-        if (candles && candles.length > 0) {
-            return candles[0].epoch;
+    static getFirstEpoch(response: TGetQuotesResult) {
+        if (response.candles && response.candles.length > 0) {
+            return response.candles[0].epoch as number;
         }
-        if (history && history.times && history.times.length > 0) {
-            const { times } = history;
+        if (response.history && response.history.times && response.history.times.length > 0) {
+            const { times } = response.history;
             return +times[0];
         }
     }

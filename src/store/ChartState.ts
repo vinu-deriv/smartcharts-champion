@@ -4,12 +4,13 @@ import {
     TChartControlsWidgets,
     TChartProps,
     TGetIndicatorHeightRatio,
+    TGetQuotes,
     TGranularity,
     TLayout,
     TSettings,
 } from 'src/types';
 import debounce from 'lodash.debounce';
-import { AuditDetailsForExpiredContract, ProposalOpenContract } from '@deriv/api-types';
+import { AuditDetailsForExpiredContract, ProposalOpenContract } from 'src/types/api-types';
 import { isDeepEqual } from 'src/utils/object';
 import LZString from 'lz-string';
 import MainStore from '.';
@@ -22,6 +23,7 @@ import {
     getYAxisScalingParams,
 } from '../utils';
 import ChartStore from './ChartStore';
+import { processSymbols, categorizeActiveSymbols } from '../utils/active-symbols';
 
 type TStateChangeOption = {
     indicator_type_name?: string;
@@ -65,8 +67,8 @@ class ChartState {
     allowTickChartTypeOnly?: boolean;
     isStaticChart? = false;
     shouldFetchTradingTimes = true;
-    shouldFetchTickHistory = true;
-    allTicks: NonNullable<AuditDetailsForExpiredContract>['all_ticks'] = [];
+    shouldGetQuotes = true;
+    allTicks: NonNullable<AuditDetailsForExpiredContract['all_ticks']> = [];
     contractInfo: ProposalOpenContract = {};
     refreshActiveSymbols?: boolean;
     hasReachedEndOfData = false;
@@ -80,6 +82,8 @@ class ChartState {
     yAxisMargin = { top: 106, bottom: 64 };
     tradingTimes: string | null = null;
     activeSymbols: string | null = null;
+    masterData: string | null = null;
+    getQuotes?: TGetQuotes;
     chartControlsWidgets?: TChartControlsWidgets;
     enabledChartFooter?: boolean;
 
@@ -123,7 +127,7 @@ class ChartState {
             shouldMinimiseLastDigits: observable,
             isStaticChart: observable,
             shouldFetchTradingTimes: observable,
-            shouldFetchTickHistory: observable,
+            shouldGetQuotes: observable,
             allTicks: observable,
             contractInfo: observable,
             refreshActiveSymbols: observable,
@@ -181,7 +185,7 @@ class ChartState {
         scrollToEpoch,
         settings,
         shouldFetchTradingTimes = true,
-        shouldFetchTickHistory = true,
+        shouldGetQuotes = true,
         should_zoom_out_on_yaxis,
         allTicks = [],
         contractInfo = {},
@@ -219,7 +223,29 @@ class ChartState {
             JSON.stringify(chartData.activeSymbols) !== this.activeSymbols
         ) {
             this.activeSymbols = JSON.stringify(chartData.activeSymbols);
-            this.mainStore.chart.activeSymbols?.computeActiveSymbols(chartData.activeSymbols);
+            // Process active symbols directly
+            if (this.mainStore.chart.processedSymbols && chartData?.activeSymbols) {
+                this.mainStore.chart.processedSymbols = processSymbols(chartData.activeSymbols);
+                this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(this.mainStore.chart.processedSymbols);
+                
+                // Create symbol map for quick lookup
+                this.mainStore.chart.symbolMap = {};
+                for (const symbolObj of this.mainStore.chart.processedSymbols) {
+                    this.mainStore.chart.symbolMap[symbolObj.symbol] = symbolObj;
+                }
+            }
+        }
+
+        if (
+            chartData?.masterData &&
+            Array.isArray(chartData.masterData) &&
+            JSON.stringify(chartData.masterData) !== this.masterData
+        ) {
+            this.masterData = JSON.stringify(chartData.masterData);
+            if (this.mainStore.chart.feed) {
+                this.mainStore.chart.feed.updateQuotes(chartData.masterData, false);
+                this.shouldGetQuotes = false;
+            }
         }
 
         this.chartStatusListener = chartStatusListener;
@@ -232,7 +258,7 @@ class ChartState {
         this.has_updated_settings = !isDeepEqual(this.settings?.whitespace, settings?.whitespace);
         this.settings = settings;
         this.shouldFetchTradingTimes = shouldFetchTradingTimes;
-        this.shouldFetchTickHistory = shouldFetchTickHistory;
+        this.shouldGetQuotes = shouldGetQuotes;
         this.allowTickChartTypeOnly = allowTickChartTypeOnly;
         this.allTicks = allTicks;
         this.contractInfo = contractInfo;
@@ -264,6 +290,12 @@ class ChartState {
             this.symbol = symbol;
             isSymbolChanged = true;
 
+            // When symbol changes, we need to ensure trading times are updated
+            if (chartData?.tradingTimes && typeof chartData.tradingTimes === 'object') {
+                this.mainStore.chart.tradingTimes?._calculatingTradingTime(chartData.tradingTimes);
+                this.tradingTimes = JSON.stringify(chartData.tradingTimes);
+            }
+
             this.mainStore.chartTitle.hidePrice();
         }
 
@@ -278,11 +310,20 @@ class ChartState {
             isGranularityChanged = true;
         }
 
-        if (this.chartStore.activeSymbols && refreshActiveSymbols !== this.refreshActiveSymbols) {
+        if (refreshActiveSymbols !== this.refreshActiveSymbols) {
             this.refreshActiveSymbols = refreshActiveSymbols;
 
-            if (this.refreshActiveSymbols) {
-                this.chartStore.activeSymbols.retrieveActiveSymbols(this.refreshActiveSymbols);
+            // If refreshActiveSymbols is true and we have chartData with activeSymbols, reprocess them
+            if (this.refreshActiveSymbols && chartData?.activeSymbols) {
+                const processedSymbols = processSymbols(chartData.activeSymbols);
+                this.mainStore.chart.processedSymbols = processedSymbols;
+                this.mainStore.chart.categorizedSymbols = categorizeActiveSymbols(processedSymbols);
+                
+                // Create symbol map for quick lookup
+                this.mainStore.chart.symbolMap = {};
+                for (const symbolObj of processedSymbols) {
+                    this.mainStore.chart.symbolMap[symbolObj.symbol] = symbolObj;
+                }
             }
         }
 
@@ -373,20 +414,20 @@ class ChartState {
             this.enableZoom = enableZoom;
         }
 
-        if (isLive != null && isLive != undefined && this.mainStore.chart.isLive != isLive) {
+        if (isLive !== null && isLive !== undefined && this.mainStore.chart.isLive !== isLive) {
             this.mainStore.chart.isLive = isLive;
             this.mainStore.chartAdapter.updateLiveStatus(isLive);
         }
 
         if (
-            startWithDataFitMode != null &&
-            startWithDataFitMode != undefined &&
-            this.mainStore.chart.startWithDataFitMode != startWithDataFitMode
+            startWithDataFitMode !== null &&
+            startWithDataFitMode !== undefined &&
+            this.mainStore.chart.startWithDataFitMode !== startWithDataFitMode
         ) {
             this.mainStore.chart.startWithDataFitMode = startWithDataFitMode;
         }
 
-        if (this.mainStore.chart.leftMargin != leftMargin) {
+        if (this.mainStore.chart.leftMargin !== leftMargin) {
             this.mainStore.chart.leftMargin = leftMargin;
             this.mainStore.chartAdapter.updateLeftMargin(leftMargin);
         }

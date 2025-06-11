@@ -1,4 +1,4 @@
-import { ServerTimeResponse } from '@deriv/api-types';
+import { TServerTime } from 'src/types/api-types';
 import { BinaryAPI } from 'src/binaryapi';
 import { strToDateTime } from './date';
 import { getUTCEpoch, getLocalDate, getUTCDate } from './index';
@@ -35,25 +35,15 @@ class ServerTime {
 
     async requestTime() {
         this.clientTimeAtRequest = getUTCEpoch(new Date());
-        if (this.serverTimeAtResponse) {
-            // it is not the first time
-            await this._api?.getServerTime().then(this._timeResponse);
-        } else {
-            // it is the first time
-            // to boot up the speed, at the beginig
-            // we use the user time
+      
             this._timeResponse({
                 time: Math.floor(new Date().getTime() / 1000),
             });
-        }
+        
         this.clockStartedPromise.resolve();
     }
 
-    _timeResponse = (response: ServerTimeResponse | { time: number }) => {
-        if ('msg_type' in response && response.error) {
-            this.clockStarted = false;
-        }
-
+    _timeResponse = (response: TServerTime | { time: number }) => {
         if (!this.clockStarted) {
             this.init();
             return;

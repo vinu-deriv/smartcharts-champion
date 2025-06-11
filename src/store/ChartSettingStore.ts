@@ -49,9 +49,8 @@ export default class ChartSettingStore {
         reaction(
             () => (this?.language as TLanguage)?.key,
             () => {
-                mainStore?.chart?.activeSymbols?.retrieveActiveSymbols?.(true).then(() => {
-                    mainStore?.chart?.changeSymbol?.(mainStore.state.symbol, mainStore.state.granularity, true);
-                });
+                // activeSymbols was removed from chart, directly call changeSymbol with isLanguageChanged=true
+                mainStore?.chart?.changeSymbol?.(mainStore.state.symbol, mainStore.state.granularity, true);
             }
         );
         when(

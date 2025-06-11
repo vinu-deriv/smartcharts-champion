@@ -3,8 +3,13 @@
 import { action, computed, observable, reaction, makeObservable } from 'mobx';
 import moment from 'moment';
 import MainStore from '.';
-import { ActiveSymbols, BinaryAPI, TradingTimes } from '../binaryapi';
-import { TProcessedSymbolItem, TSubCategoryDataItem } from '../binaryapi/ActiveSymbols';
+import { BinaryAPI, TradingTimes } from '../binaryapi';
+import { TProcessedSymbolItem } from '../types/active-symbols.types';
+import { processSymbols, categorizeActiveSymbols } from '../utils/active-symbols';
+import {
+    TCategorizedSymbolItem,
+    TSubCategoryDataItem,
+} from '../types/categorical-display.types';
 
 import Context from '../components/ui/Context';
 import { STATE } from '../Constant';
@@ -19,7 +24,6 @@ import {
     TQuote,
     TRatio,
 } from '../types';
-import { cloneCategories } from '../utils';
 import PendingPromise from '../utils/PendingPromise';
 import BarrierStore from './BarrierStore';
 import ChartState from './ChartState';
@@ -32,7 +36,10 @@ type TDefaults = {
 class ChartStore {
     static chartCount = 0;
     static tradingTimes: TradingTimes | null;
-    static activeSymbols: ActiveSymbols;
+    static processedSymbols: TProcessedSymbolItem[];
+    static symbolMap: Record<string, TProcessedSymbolItem> = {};
+    static categorizedSymbols: TCategorizedSymbolItem<TSubCategoryDataItem>[] = [];
+    
     chartContainerHeight?: number;
     chartHeight?: number;
     chartId?: string;
@@ -55,6 +62,11 @@ class ChartStore {
     shouldRenderDialogs = false;
     leftMargin?: number;
     lastQuote?: TQuote;
+    
+    processedSymbols?: TProcessedSymbolItem[];
+    symbolMap: Record<string, TProcessedSymbolItem> = {};
+    categorizedSymbols: TCategorizedSymbolItem<TSubCategoryDataItem>[] = [];
+    
     constructor(mainStore: MainStore) {
         makeObservable(this, {
             chartContainerHeight: observable,
@@ -75,7 +87,6 @@ class ChartStore {
             yAxisWidth: computed,
             lastQuote: observable,
             _initChart: action.bound,
-            categorizedSymbols: computed,
             changeSymbol: action.bound,
             destroy: action.bound,
             granularity: observable,
@@ -88,6 +99,9 @@ class ChartStore {
             setChartAvailability: action.bound,
             updateCurrentActiveSymbol: action.bound,
             updateScaledOneOne: action.bound,
+            processedSymbols: observable,
+            symbolMap: observable,
+            categorizedSymbols: observable,
         });
 
         this.mainStore = mainStore;
@@ -109,7 +123,6 @@ class ChartStore {
     onMessage = null;
     _barriers: BarrierStore[] = [];
     tradingTimes?: TradingTimes;
-    activeSymbols?: ActiveSymbols;
     whitespace?: number;
     isDestroyed = false;
     get loader() {
@@ -147,11 +160,11 @@ class ChartStore {
         const quotes = this.mainStore.chart.feed?.quotes;
         let currentQuote = quotes?.[quotes.length - 1];
         if (currentQuote && !currentQuote.Close) {
-            const dataSegmentClose = quotes?.filter(item => item && item.Close);
+            const dataSegmentClose = quotes?.filter((item: any) => item && item.Close);
             if (dataSegmentClose && dataSegmentClose.length) {
                 currentQuote = dataSegmentClose[dataSegmentClose.length - 1];
             } else {
-                const dataSetClose = quotes?.filter(item => item && item.Close);
+                const dataSetClose = quotes?.filter((item: any) => item && item.Close);
                 if (dataSetClose && dataSetClose.length) {
                     currentQuote = dataSetClose[dataSetClose.length - 1];
                 }
@@ -238,25 +251,30 @@ class ChartStore {
         const {
             symbol,
             granularity,
-            requestAPI,
-            requestSubscribe,
-            requestForget,
-            requestForgetStream,
+            unsubscribeQuotes,
+            getQuotes,
+            subscribeQuotes,
             isMobile,
             enableRouting,
             onMessage,
             settings,
             onSettingsChange,
-            getMarketsOrder,
-            initialData,
             chartData,
             feedCall,
             isLive,
             startWithDataFitMode,
             leftMargin,
         } = props;
+
         this.feedCall = feedCall || {};
-        this.api = new BinaryAPI(requestAPI, requestSubscribe, requestForget, requestForgetStream);
+        this.api = new BinaryAPI(
+            unsubscribeQuotes, 
+            getQuotes || (async () => ({
+                candles: [],
+                echo_req: {},
+            })), 
+            subscribeQuotes || (() => (() => { /* Empty function */ })), 
+        );
         this.currentLanguage = localStorage.getItem('current_chart_lang') ?? settings?.language?.toLowerCase();
         // trading times and active symbols can be reused across multiple charts
         this.tradingTimes =
@@ -264,16 +282,34 @@ class ChartStore {
             (ChartStore.tradingTimes = new TradingTimes(this.api, {
                 enable: this.feedCall.tradingTimes,
                 shouldFetchTradingTimes: this.mainStore.state.shouldFetchTradingTimes,
-                tradingTimes: initialData?.tradingTimes,
+                tradingTimes: chartData?.tradingTimes,
             }));
-        this.activeSymbols =
-            (this.currentLanguage === settings?.language && ChartStore.activeSymbols) ||
-            (ChartStore.activeSymbols = new ActiveSymbols(this.api, this.tradingTimes, {
-                enable: this.feedCall.activeSymbols,
-                getMarketsOrder,
-                activeSymbols: initialData?.activeSymbols,
-                chartData,
-            }));
+
+        const activeSymbols = chartData?.activeSymbols;
+        // Process active symbols directly from chartData
+        if (activeSymbols) {
+            // Process and categorize symbols
+            const processedSymbols = processSymbols(activeSymbols);
+            this.processedSymbols = processedSymbols;
+            this.categorizedSymbols = categorizeActiveSymbols(processedSymbols);
+            
+            // Create symbol map for quick lookup
+            this.symbolMap = {};
+            for (const symbolObj of processedSymbols) {
+                this.symbolMap[symbolObj.symbol] = symbolObj;
+            }
+            
+            // Store in static properties for reuse
+            ChartStore.processedSymbols = processedSymbols;
+            ChartStore.symbolMap = this.symbolMap;
+            ChartStore.categorizedSymbols = this.categorizedSymbols;
+        } else if (this.currentLanguage === settings?.language && ChartStore.processedSymbols) {
+            // Reuse existing processed symbols
+            this.processedSymbols = ChartStore.processedSymbols;
+            this.symbolMap = ChartStore.symbolMap;
+            this.categorizedSymbols = ChartStore.categorizedSymbols;
+        }
+        
         const { chartSetting } = this.mainStore;
         chartSetting.setSettings(settings);
         chartSetting.onSettingsChange = onSettingsChange;
@@ -297,7 +333,7 @@ class ChartStore {
         const context = new Context(this.rootNode);
         this.stateStore.stateChange(STATE.INITIAL);
         this.loader.setState('market-symbol');
-        this.activeSymbols?.retrieveActiveSymbols().then(() => {
+        
             this.loader.setState('trading-time');
             this.tradingTimes?.initialize().then(
                 action(() => {
@@ -312,11 +348,11 @@ class ChartStore {
                         this.state?.restoreLayout();
                     }
 
-                    let _symbol = this.state?.symbol || symbol;
+                    const _symbol = this.state?.symbol || symbol;
 
                     this.changeSymbol(
                         // default to first available symbol
-                        _symbol || (this.activeSymbols && Object.keys(this.activeSymbols.symbolMap)[0]),
+                        _symbol || (this.symbolMap && Object.keys(this.symbolMap)[0]),
                         this.granularity
                     );
                     this.context = context;
@@ -353,7 +389,7 @@ class ChartStore {
                     );
                 })
             );
-        });
+        
     }
     setResizeEvent = () => {
         const listener = (entries: ResizeObserverEntry[]) => {
@@ -379,7 +415,7 @@ class ChartStore {
         }
     };
     onMarketOpenClosedChange = (changes: TChanges) => {
-        const symbolObjects = this.activeSymbols?.processedSymbols || [];
+        const symbolObjects = this.processedSymbols || [];
         let shouldRefreshChart = false;
         for (const { symbol, name } of symbolObjects) {
             if (symbol in changes) {
@@ -404,17 +440,7 @@ class ChartStore {
         this.mainStore.state.setChartTheme(this.mainStore.chartSetting.theme);
         this.mainStore.chartAdapter.setSymbolClosed(isChartClosed);
     }
-    get categorizedSymbols() {
-        if (!this.activeSymbols || this.activeSymbols.categorizedSymbols.length === 0) return [];
-        const activeSymbols = this.activeSymbols.activeSymbols;
-        return cloneCategories<TSubCategoryDataItem>(activeSymbols, item => {
-            const selected = (item as TSubCategoryDataItem).dataObject.symbol === this.currentActiveSymbol?.symbol;
-            return {
-                ...item,
-                selected,
-            };
-        });
-    }
+    
     onServerTimeChange() {
         if (this.tradingTimes?._serverTime) {
             this.serverTime = moment(this.tradingTimes._serverTime.getEpoch() * 1000).format(
@@ -435,7 +461,7 @@ class ChartStore {
         isLanguageChanged = false
     ) {
         if (typeof symbolObj === 'string') {
-            symbolObj = this.activeSymbols?.getSymbolObj(symbolObj);
+            symbolObj = this.symbolMap[symbolObj];
         }
         const isSymbolAvailable = symbolObj && this.currentActiveSymbol;
         if (
@@ -477,7 +503,6 @@ class ChartStore {
 
             if (err) {
                 /* TODO, symbol not found error */
-                return;
             }
         };
 
@@ -497,9 +522,7 @@ class ChartStore {
         );
     }
 
-    remainLabelY = (): number => {
-        return 0;
-    };
+    remainLabelY = (): number => 0;
 
     updateScaledOneOne(state: boolean) {
         this.isScaledOneOne = state;
@@ -551,4 +574,5 @@ class ChartStore {
         }
     }
 }
+
 export default ChartStore;
