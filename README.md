@@ -461,3 +461,320 @@ It can be imported from `@deriv-com/smartcharts-champion` package either as `Fas
   <FastMarker
     markerRef={setRef}
     className="your-css-class"
+  >
+    <your content here/>
+  </FastMarker>
+</SmartChart>
+
+```
+
+USAGE:
+
+- `setRef({setPosition, div})` will be called onMount.
+- `setRef(null)` will be called when the marker unmounts.
+- `div` is the dom element containing the marker with `your-css-class`
+  - any content update should be done using `div` and vanilla js
+  - use `div.querySelector('...')` to get a dom reference in order to update your content.
+  - avoid doning expensive DOM operations on `div` such as style changes.
+- `setPosition({epoch, price})` is a function that you will use to update the `div` position.
+  - epoch is the tick unix epoch from api
+  - price is the tick price, it could be `null` if you want to draw a vertical line.
+- call `setPosition({epoch: null, price: null})` to hide the marker.
+
+PROPS:
+
+- `markerRef` (required): pass the `setRef` callback using this property
+- `className` (optional): avoid expoensive css transition or keyframe animations on this class.
+
+### Raw Marker API
+
+Get a raw callback with underlying canvas2dcontext.
+This component is used to render directly into the chart canvas.
+
+PROPS:
+
+- `epoch_array`: array of epoch values to get coordinates for.
+- `draw_callback`: called on every frame with ({ctx, points}).
+  - `points` will be an array of [{left, top, epoch}] in pixels.
+  - `ctx` is the Context2dDrawingContext
+
+### Customising Components
+
+We offer library users full control on deciding which of the top widgets and chart control buttons to be displayed by overriding the render methods themselves. To do this you pass in a function to `chartControlsWidgets` or `topWidgets`.
+
+For example, we want to remove all the chart control buttons, and for top widgets to just show the comparison list (refer `app/index.jsx`):
+
+```jsx
+import { ChartMode, ToolbarWidget } from "@deriv-com/smartcharts-champion";
+
+const renderTopWidgets = () => (
+  <React.Fragment>
+    <div>Hi I just replaced the top widgets!</div>
+    <ChartMode />
+  </React.Fragment>
+);
+
+const renderBottomWidgets = () => (
+  <React.Fragment>
+    <div>Hi, I am a bottom widget!</div>
+  </React.Fragment>
+);
+
+const renderToolbarWidgets = () => (
+  <ToolbarWidget position="top">
+    <div>Hi I just replaced the top widgets!</div>
+    <ChartMode />
+  </ToolbarWidget>
+);
+
+const App = () => (
+  <SmartChart
+    bottomWidgets={renderBottomWidgets}
+    topWidgets={renderTopWidgets}
+    toolbarWidget={renderToolbarWidgets}
+    chartControlsWidgets={() => {}}
+  ></SmartChart>
+);
+```
+
+Here are the following components you can import:
+
+- Top widgets:
+  - `<ChartTitle enabled={true} onChange={(symbol) => {}} open_market={null} />`
+- Chart controls:
+  - `<CrosshairToggle enabled={true} />`
+  - `<ChartTypes enabled={true} onChange={(chartType) => {}} />`
+  - `<StudyLegend />`
+  - `<DrawTools />`
+  - `<Views onChartType={(chartType) => {}} onGranularity={(granularity) => {}} />`
+  - `<Share />`
+  - `<Timeperiod enabled={true} onChange={(chartType) => {}} />`
+  - `<ChartSize />`
+  - `<ChartSetting />`
+- Toolbar Widget
+  - `<ChartMode onChartType={(chartType) => {}} onGranularity={(granularity) => {}} />`
+
+> Note: ChartMode and Views have the same type of props. It includes required `onChartType` and `onGranularity` callbacks and an optional `portalNodeId`.
+
+
+### Props vs UI
+
+Certain chart parameters can be set either by props or from the chart UI:
+
+- `symbol` - set by `<ChartTitle />`
+- `granularity` - set by `<TimePeriod >`
+- `chartType` - set by `<ChartTypes />`
+
+This creates conflicts in deciding which is the single source of truth. To circumvent this, if these props are set (not `undefined`), selecting options in its corresponding components will not have any affect on the chart; the prop values take precedence. To have control over both the UI and the props, we provide library users the option to _override_ component behaviour via `onChange` prop. For example, to retrieve the symbol a client chooses:
+
+```jsx
+<ChartTitle
+  open_market={{
+    category: 'forex',
+    subcategory: 'minor-pairs',
+    market: 'frxAUDCAD'
+  }}
+  onChange={(symbol) => {
+    /* ...Pass to symbol prop in <SmartCharts /> */
+  }}
+/>
+```
+
+See available components and their props in [Customising Components](#customising-components).
+
+#### ChartTitle
+
+| Attribute    | Description                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------- |
+| onChange     | When symbol/market changes, this method call. `(symbol) => { }`                                     |
+| isNestedList | Change the theme of Dropdown, if set to `true` it shows a dropdown nested style. Default is `false` |
+| open_market | Sepecify the visible market on the market selector scroll. it accept `{category: '', subcategory: '', market: ''}` . Default is `null` |
+
+
+#### ToolbarWidget
+
+| Attribute | Description                                                                     |
+| --------- | ------------------------------------------------------------------------------- |
+| position  | determine the position of toolbar, which can be `top, bottom`. Default is `top` |
+
+
+## How to contribute
+
+
+1. Create branch from the latest `master` branch
+
+    ```sh
+    git checkout master
+    git pull upstream master
+    git checkout -b [_your_branch_name]
+    ```
+
+2. Make your changes
+
+3. Make pull request
+
+-   Push your changes to your origin
+
+    ```sh
+    git push -u origin [_your_branch_name]
+    ```
+
+-   Click on the autogenerated link from terminal to open the PR
+
+
+## Manage releases / deployment process
+### Library deployment / publishing to NPM
+
+To publish to production:
+
+    ```sh
+    npm run build && npm publish
+    ```
+
+
+## Manage translations
+
+All strings that need to be translated must be inside `t.translate()`:
+
+```js
+t.translate("[currency] [amount] payout if the last tick.", {
+  currency: "USD",
+  amount: 43.12,
+});
+t.setLanguage("fr", callback_function); // components need to be rerendered for changes to take affect
+```
+
+### Debugging NPM Package
+
+Some issues only show up for library users, so it is helpful to test the NPM package before deploying it to library users. You can do this by building the library directly into the node_modules directory of an app that uses the SmartCharts library. For example to test the library build on binary-static you can execute:
+
+    npm run watch '../binary-static/node_modules/@deriv-com/smartcharts-champion/dist'
+
+Now each time you make any change, it will overwrite the SmartCharts library inside the `node_modules` folder.
+
+### Separation of App and Library
+
+There should be a clear distinction between developing for app and developing for library. Library source code is all inside `src` folder, whereas app source code is inside `app`.
+
+Webpack determines whether to build an app or library depending on whether an environment variable `BUILD_MODE` is set to `app`. Setting this variable switches the entry point of the project (app build mode uses `app/index.jsx` while library uses `src/index.js`). We do it this way to develop the app to have hot reload available when we modify library files.
+
+### Dealing With SVGs
+
+SmartCharts has 2 ways of utilizing SVG files: as CSS background image and as external SVG.
+
+##### CSS Background Image SVG
+
+These SVG are added inline into the CSS via [postcss-inline-svg](https://github.com/TrySound/postcss-inline-svg). Currently the only place where this is used is the loader, because if the external SVG is not loaded yet we would at least want a loading screen to be present.
+
+##### External SVG
+
+The SVG files included in the `js` and `jsx` files are automatically put together into a sprite sheet. Manipulating external SVG can be tricky - developers can only control stroke and fill color of the whole SVG file via CSS:
+
+```scss
+.ic-icon.active {
+  svg {
+    stroke: #2e8836;
+    fill: #ff3d38;
+  }
+}
+```
+
+**Important Note:** These stroke and fill colors will not be affected by CSS if the corresponding attributes are declared in the SVG file. Therefore, it is not uncommon SmartCharts developers would need to tweak the SVG files by hand to be able to manipulate its color.
+
+This has much less freedom compared to [inline SVG](https://github.com/MoOx/react-svg-inline) where a developer can control individual parts of the SVG, but having external SVG results in a much smaller library, and allows parts of the code not rendered by React to use them. External SVG is also cached by the browser (using shadow DOM), so though the same SVG may be used multiple times, only one copy exists in the DOM.
+
+### State Management and the `connect` Method
+
+SmartCharts uses a variation of [Mobdux](https://medium.com/@cameronfletcher92/mobdux-combining-the-good-parts-of-mobx-and-redux-61bac90ee448) to assist with state management using Mobx.
+
+Each component consists of 2 parts: a **template** (`*.jsx` file), and a **store** (`*Store.js` file). There are 3 scenarios in which the [`connect`](https://github.com/deriv-com/SmartCharts/blob/dev/src/store/Connect.js) method is used:
+
+##### 1. Main Components: The component is tied directly to the main store.
+
+Examples: `<ChartTitle />`, `<TimePeriod />`, `<Views />`...
+
+Each component here is mapped to a corresponding store in the main store. **Only one copy of this component may exist per `<SmartChart />` instance**, and its state is managed by the main store tree (defined as `mainStore` in SmartCharts). Here you pass a `mapperFunction` that would be applied directly to the main store:
+
+```jsx
+function mapperFunction(mainStore) {
+  return {
+    value: mainStore.subStore.value,
+  };
+}
+
+export default connect(mapperFunction)(MyComponent);
+```
+
+Connections in the scenario #1 should be done in the `jsx` file, to keep consistent with other components. Except for the component tied to the main store (`Chart.jsx`), all components using this method should be SFC (Stateless Functional Components), and have the lifecycle managed by the main store.
+
+##### 2. Subcomponents: Component is connected inside a store
+
+Examples: `<Menu />`, `<List />`, `<CategoricalDisplay />`...
+
+This is used when multiple copies of a store needs to exist in the same state tree. Here we do the connection inside the constructor of a child of the main store and pass it as a prop to the template. For example `<ChartTitle />` needs a `<Menu />`, so in `ChartTitleStore` we create an instance of `MenuStore` and connect it:
+
+```js
+export default class ChartTitleStore {
+  constructor(mainStore) {
+    this.menu = new MenuStore(mainStore);
+    this.ChartTitleMenu = this.menu.connect(Menu);
+    // ...
+  }
+  // ...
+}
+```
+
+The `connect` method for subcomponents are defined in its store (instead of the template file) that contains its own `mapperFunction`:
+
+```js
+export default class MenuStore {
+  // ...
+  connect = connect(() => ({
+    setOpen: this.setOpen,
+    open: this.open,
+  }));
+}
+```
+
+We then pass the connected component in `ChartTitle.jsx`:
+
+```js
+export default connect(({ chartTitle: c }) => ({
+  ChartTitleMenu: c.ChartTitleMenu,
+}))(ChartTitle);
+```
+
+> **Note**: Do NOT connect subcomponents in another connect method; `connect` creates a new component each time it is called, and a `mapperFunction` is called every time a mobx reaction or prop update is triggered.
+
+##### 3. Independent Components: components that are not managed by the main store
+
+Examples: `<Barrier />`, `<ChartMode />`
+
+Independent components is able to access the main store, but the main store has no control over independent components. As such, each independent component manages its own life cycle. Here is the interface for its store:
+
+```js
+class IndependentStore {
+  constructor(mainStore) {}
+  updateProps(nextProps) {} // intercept the props from the component
+  destructor() {} // called on componentWillUnmount
+}
+```
+
+This enables library users to use multiple copies of a component without connecting it, because mounting an independent component will also create its own store (refer to [`Marker API`](#marker-api) to see usage example of such a component). Therefore, for each independent component you connect you will also need to pass its store class (not an instance but the class itself) as a second parameter to the `connect` function:
+
+```jsx
+function mapperFunction(customStore) {
+  return {
+    value: customStore.value,
+  };
+}
+
+export default connect(
+  mapperFunction,
+  MyStoreClass // Required argument for independent components
+)(MyIndependentComponent);
+```
+
+Note that **for independent components, the `mapperFunction` is applied to the store instance**, not the main store. Should you need to access any value from the main store, you can do this via the `mainStore` passed to the constructor of each independent store class.
+
+
