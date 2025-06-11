@@ -52,8 +52,8 @@ class Feed {
     get allTicks() {
         return this._mainStore.state.allTicks;
     }
-    get shouldFetchGetQuotes() {
-        return this._mainStore.state.shouldFetchGetQuotes || false;
+    get shouldGetQuotes() {
+        return this._mainStore.state.shouldGetQuotes || false;
     }
     get contractInfo() {
         return this._mainStore.state.contractInfo;
@@ -244,7 +244,7 @@ class Feed {
         }
 
         // Check if we already have quotes from masterData in chartData
-        if (this.quotes && this.quotes.length > 0 && !this.shouldFetchGetQuotes) {
+        if (this.quotes && this.quotes.length > 0 && !this.shouldGetQuotes) {
             const quotes = this._trimQuotes(this.quotes);
             callback({ quotes });
             this._emitDataUpdate(quotes, true);
@@ -352,7 +352,7 @@ class Feed {
                 } else {
                     quotes = [];
                 }
-            } else if (this.shouldFetchGetQuotes || !(this.contractInfo as ProposalOpenContract).tick_stream) {
+            } else if (this.shouldGetQuotes || !(this.contractInfo as ProposalOpenContract).tick_stream) {
                 const response = await this._binaryApi.getQuotes(
                     getQuotesRequest as TGetQuotesRequest
                 );

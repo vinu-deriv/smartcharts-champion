@@ -39,7 +39,7 @@ class RealtimeSubscription extends Subscription {
         };
 
         // here we include duration = 'ticks' && exclude duration = 'seconds' which hasn't tick_stream, all_ticks, tick_count (consist of 15-86.400 ticks)
-        if (!this.shouldFetchGetQuotes && !!contract_info.tick_stream) {
+        if (!this.shouldGetQuotes && !!contract_info.tick_stream) {
             this._binaryApi.subscribeQuotes(
                 Object.assign(getQuotesRequest, { count: contract_info.tick_count }),
                 processQuote

@@ -17,8 +17,8 @@ class Subscription {
     get contractInfo() {
         return this._mainStore.state.contractInfo;
     }
-    get shouldFetchGetQuotes() {
-        return this._mainStore.state.shouldFetchGetQuotes || false;
+    get shouldGetQuotes() {
+        return this._mainStore.state.shouldGetQuotes || false;
     }
 
     constructor(request: TGetQuotesRequest, api: BinaryAPI, mainStore: TMainStore) {

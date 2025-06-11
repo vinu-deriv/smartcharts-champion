@@ -233,7 +233,7 @@ export type TChartProps = {
     scrollToEpoch?: number | null;
     clearChart?: () => void;
     shouldFetchTradingTimes?: boolean;
-    shouldFetchGetQuotes?: boolean;
+    shouldGetQuotes?: boolean;
     allowTickChartTypeOnly?: boolean;
     allTicks?: NonNullable<AuditDetailsForExpiredContract>['all_ticks'];
     contractInfo?: ProposalOpenContract;

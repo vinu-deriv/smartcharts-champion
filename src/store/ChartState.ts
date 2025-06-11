@@ -67,7 +67,7 @@ class ChartState {
     allowTickChartTypeOnly?: boolean;
     isStaticChart? = false;
     shouldFetchTradingTimes = true;
-    shouldFetchGetQuotes = true;
+    shouldGetQuotes = true;
     allTicks: NonNullable<AuditDetailsForExpiredContract['all_ticks']> = [];
     contractInfo: ProposalOpenContract = {};
     refreshActiveSymbols?: boolean;
@@ -127,7 +127,7 @@ class ChartState {
             shouldMinimiseLastDigits: observable,
             isStaticChart: observable,
             shouldFetchTradingTimes: observable,
-            shouldFetchGetQuotes: observable,
+            shouldGetQuotes: observable,
             allTicks: observable,
             contractInfo: observable,
             refreshActiveSymbols: observable,
@@ -185,7 +185,7 @@ class ChartState {
         scrollToEpoch,
         settings,
         shouldFetchTradingTimes = true,
-        shouldFetchGetQuotes = true,
+        shouldGetQuotes = true,
         should_zoom_out_on_yaxis,
         allTicks = [],
         contractInfo = {},
@@ -244,7 +244,7 @@ class ChartState {
             this.masterData = JSON.stringify(chartData.masterData);
             if (this.mainStore.chart.feed) {
                 this.mainStore.chart.feed.updateQuotes(chartData.masterData, false);
-                this.shouldFetchGetQuotes = false;
+                this.shouldGetQuotes = false;
             }
         }
 
@@ -258,7 +258,7 @@ class ChartState {
         this.has_updated_settings = !isDeepEqual(this.settings?.whitespace, settings?.whitespace);
         this.settings = settings;
         this.shouldFetchTradingTimes = shouldFetchTradingTimes;
-        this.shouldFetchGetQuotes = shouldFetchGetQuotes;
+        this.shouldGetQuotes = shouldGetQuotes;
         this.allowTickChartTypeOnly = allowTickChartTypeOnly;
         this.allTicks = allTicks;
         this.contractInfo = contractInfo;
