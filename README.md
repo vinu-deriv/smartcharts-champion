@@ -122,7 +122,9 @@ Some important notes on your webpack.config.js (refer to `app/webpack.config.js`
 import { setSmartChartsPublicPath } from "@deriv-com/smartcharts-champion";
 
 // SmartCharts chunk are deployed to https://mysite.com/dist/*
-setSmartChartsPublicPath("/dist/");
+setSmartChartsPublicPath("/dist/"); 
+// or 
+setSmartChartsPublicPath("node_modules/@deriv-com/smartcharts-champion/dist/")
 ```
 
 We can use the `copy-webpack-plugin` webpack plugin to copy over SmartCharts chunks:
@@ -133,6 +135,7 @@ new CopyWebpackPlugin([
   { from: "./node_modules/@deriv-com/smartcharts-champion/dist/smartcharts.css" },
 ]);
 ```
+We also need to needs to copy node_modules/@deriv-com/smartcharts-champion/dist/chart/assets to assets folder in the root of the project using CopyWebpackPlugin.
 ### API
 
 > Note: Props will take precedence over values set by the library.
