@@ -161,10 +161,11 @@ class StreamManager {
         stream.onStream(callback);
     }
 
-    forget(request: TBinaryAPIRequest, callback: (response: TGetQuotesResult) => void) {
+    forget(request: TBinaryAPIRequest, callback?: (response: TGetQuotesResult) => void) {
         const key = this._getKey((request as unknown) as TGetQuotesRequest);
         const stream = this._streams[key];
-        if (stream) {
+        delete this._streams[key];
+        if (stream && callback) {
             stream.offStream(callback);
         }
     }
