@@ -20,12 +20,12 @@ class CandlePainter extends OhlcPainter {
 
     _linePaint = Paint()
       ..color = currentPainting.yOpen > currentPainting.yClose
-          ? style.positiveColor
-          : style.negativeColor
+          ? style.candleBullishWickColor
+          : style.candleBearishWickColor
       ..strokeWidth = 1.2;
 
-    _positiveCandlePaint = Paint()..color = style.positiveColor;
-    _negativeCandlePaint = Paint()..color = style.negativeColor;
+    _positiveCandlePaint = Paint()..color = style.candleBullishBodyColor;
+    _negativeCandlePaint = Paint()..color = style.candleBearishBodyColor;
 
     canvas.drawLine(
       Offset(currentPainting.xCenter, currentPainting.yHigh),
