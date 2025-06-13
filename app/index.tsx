@@ -221,6 +221,8 @@ const unsubscribeQuotes = (request?: TGetQuotesRequest) => {
             console.error('Error forgetting subscription:', error);
         });
     }
+     // Call the streamManager forget method
+        streamManager.forget(request);
     
     // Call the original forget method as a fallback
     // We need to adapt the callback to match what streamManager.forget expects
