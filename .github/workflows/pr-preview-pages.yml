@@ -1,0 +1,104 @@
+name: PR Preview Deployment
+
+on:
+    pull_request_target:
+        types: [opened, synchronize]
+
+concurrency:
+    group: github-pages-pr-preview-${{ github.head_ref }}
+    cancel-in-progress: true
+
+jobs:
+    build_and_deploy_preview:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - name: Verify user
+              uses: 'deriv-com/shared-actions/.github/actions/verify_user_in_organization@v1'
+              with:
+                  username: ${{github.event.pull_request.user.login}}
+                  token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+            - name: Post preview build comment
+              id: post_preview_build_comment
+              uses: 'deriv-com/shared-actions/.github/actions/post_preview_build_comment@v1'
+              with:
+                  issue_number: ${{github.event.number}}
+                  head_sha: ${{github.event.pull_request.head.sha}}
+
+            - name: Checkout
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+            - name: Custom flutter-chart
+              id: flutter_chart
+              uses: actions/checkout@v3
+              with:
+                  repository: deriv-com/flutter-chart
+                  path: flutter-chart
+                  ref: 21c008fcc901b942ac8fce2f535350e7c34b4743
+
+            - name: Setup Flutter
+              uses: subosito/flutter-action@62f096cacda5168a3bd7b95793373be14fa4fbaf
+              with:
+                  flutter-version: '3.10.6'
+                  channel: 'stable'
+                  cache: true
+
+            - name: Build flutter
+              env:
+                  GIT_SSH_COMMAND: 'ssh -i ~/.ssh/github_action_key'
+              run: |
+                  cd chart_app
+                  flutter pub get
+                  flutter build web --web-renderer html --release
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build app
+              run: npm run build
+
+            - name: Checkout gh-pages branch
+              uses: actions/checkout@v3
+              with:
+                  ref: gh-pages
+                  path: gh-pages
+
+            - name: Prepare PR preview directory
+              run: |
+                  mkdir -p gh-pages/pr-preview/${{ github.event.number }}
+                  cp -r dist/* gh-pages/pr-preview/${{ github.event.number }}/
+                  cp index.html gh-pages/pr-preview/${{ github.event.number }}/
+
+            - name: Deploy to GitHub Pages
+              run: |
+                  cd gh-pages
+                  git config user.name "GitHub Actions Bot"
+                  git config user.email "actions@github.com"
+                  git add .
+                  git commit -m "Deploy PR #${{ github.event.number }} preview"
+                  git push origin gh-pages
+
+            - name: Generate preview URL
+              id: preview_url
+              run: echo "preview_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-preview/${{ github.event.number }}/" >> $GITHUB_OUTPUT
+
+            - name: Post preview link comment
+              if: always() && steps.post_preview_build_comment.outcome == 'success'
+              uses: 'deriv-com/shared-actions/.github/actions/post_preview_link_comment@v1'
+              with:
+                  issue_number: ${{github.event.number}}
+                  check_run_id: ${{steps.post_preview_build_comment.outputs.check_run_id}}
+                  preview_url: ${{steps.preview_url.outputs.preview_url}}
+                  status: ${{job.status}}
