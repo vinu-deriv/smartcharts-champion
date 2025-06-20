@@ -277,21 +277,11 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                                 CurrentTickIndicator(
                                   feedModel.ticks.last,
                                   id: 'last_tick_indicator',
-                                  style: HorizontalBarrierStyle(
-                                      labelPadding: 8,
-                                      color: latestTickColor,
-                                      hasArrow: false,
-                                      textStyle: TextStyle(
-                                        fontSize: 12,
-                                        height: 1.3,
-                                        fontWeight: FontWeight.w600,
-                                        color: isLightMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                        fontFeatures: const <FontFeature>[
-                                          FontFeature.tabularFigures()
-                                        ],
-                                      )),
+                                  style: configModel.theme.currentSpotStyle
+                                      .copyWith(
+                                    labelPadding: 8,
+                                    hasArrow: false,
+                                  ),
                                   visibility: HorizontalBarrierVisibility
                                       .keepBarrierLabelVisible,
                                 ),
@@ -300,33 +290,16 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                                     id: 'blink_tick_indicator',
                                     visibility: HorizontalBarrierVisibility
                                         .keepBarrierLabelVisible,
-                                    style: HorizontalBarrierStyle(
-                                      color: isLightMode
-                                          ? Colors.black
-                                          : Colors.white,
-                                    )),
+                                    style: configModel.theme.currentSpotStyle),
                               if (app.configModel.showTimeInterval &&
                                   !isTickGranularity)
                                 TimeIntervalIndicator(
                                   app.configModel.remainingTime,
                                   feedModel.ticks.last.close,
                                   longLine: false,
-                                  style: HorizontalBarrierStyle(
-                                    color: isLightMode
-                                        ? Colors.black
-                                        : Colors.white,
+                                  style: configModel.theme.currentSpotStyle
+                                      .copyWith(
                                     hasArrow: false,
-                                    textStyle: TextStyle(
-                                      fontSize: 12,
-                                      height: 1.3,
-                                      fontWeight: FontWeight.w600,
-                                      color: isLightMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontFeatures: const <FontFeature>[
-                                        FontFeature.tabularFigures()
-                                      ],
-                                    ),
                                   ),
                                 ),
                             ]

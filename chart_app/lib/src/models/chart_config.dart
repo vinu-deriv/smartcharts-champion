@@ -1,10 +1,9 @@
 import 'dart:js';
 import 'dart:js_util';
 import 'package:chart_app/src/helpers/color.dart';
-import 'package:deriv_chart/deriv_chart.dart' hide ChartDefaultDarkTheme;
+import 'package:deriv_chart/deriv_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:chart_app/src/interop/js_interop.dart';
-import './chart_default_dark_theme.dart';
 
 /// State and methods of chart web adapter config.
 class ChartConfigModel extends ChangeNotifier {
