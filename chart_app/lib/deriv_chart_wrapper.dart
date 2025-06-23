@@ -339,6 +339,7 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                       chartAxisConfig: ChartAxisConfig(
                         maxCurrentTickOffset:
                             _getMaxCurrentTickOffset(rightPadding),
+                        smoothScrolling: configModel.isSmoothChartEnabled,
                       ),
                       msPerPx: configModel.startWithDataFitMode
                           ? null
@@ -354,9 +355,6 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                       showDataFitButton: false,
                       showScrollToLastTickButton: false,
                       loadingAnimationColor: Colors.transparent,
-                      showCurrentTickBlinkAnimation: false,
-                      currentTickAnimationDuration: animationDuration,
-                      quoteBoundsAnimationDuration: animationDuration,
                     );
                   }))
                 ],

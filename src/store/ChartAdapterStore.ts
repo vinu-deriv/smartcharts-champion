@@ -423,6 +423,7 @@ export default class ChartAdapterStore {
             msPerPx: this.msPerPx,
             pipSize: this.mainStore.chart.pip,
             isMobile: this.mainStore.chart.isMobile || false,
+            isSmoothChartEnabled: this.mainStore.chartSetting.isSmoothChartEnabled,
             yAxisMargin: this.mainStore.state.yAxisMargin,
         });
     };
@@ -611,7 +612,7 @@ export default class ChartAdapterStore {
                     delta_x = this.getXFromEpoch((barNext.DT as Date).getTime()) - x;
 
                     ratio =
-                        (((date as unknown) as number) - (bar.DT as Date).getTime()) /
+                        ((date as unknown as number) - (bar.DT as Date).getTime()) /
                         ((barNext.DT as Date).getTime() - (bar.DT as Date).getTime());
 
                     if (price) delta_y = barNext.Close - price;
@@ -619,7 +620,7 @@ export default class ChartAdapterStore {
                     delta_x = x - this.getXFromEpoch((barPrev.DT as Date).getTime());
 
                     ratio =
-                        (((date as unknown) as number) - (bar.DT as Date).getTime()) /
+                        ((date as unknown as number) - (bar.DT as Date).getTime()) /
                         ((bar.DT as Date).getTime() - (barPrev.DT as Date).getTime());
 
                     if (price) delta_y = price - barPrev.Close;

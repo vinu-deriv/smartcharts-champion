@@ -104,8 +104,18 @@ export type TGetQuotesResult = {
     };
 };
 
-export type TGetQuotes = (params: { symbol: string; granularity: number; count: number; start?: number; end?: number; style?: string }) => Promise<TGetQuotesResult>;
-export type TSubscribeQuotes = (params: { symbol: string, granularity: TGranularity}, callback: (quote: TQuote) => void) => (() => void);
+export type TGetQuotes = (params: {
+    symbol: string;
+    granularity: number;
+    count: number;
+    start?: number;
+    end?: number;
+    style?: string;
+}) => Promise<TGetQuotesResult>;
+export type TSubscribeQuotes = (
+    params: { symbol: string; granularity: TGranularity },
+    callback: (quote: TQuote) => void
+) => () => void;
 export type TNetworkConfig = {
     class: string;
     tooltip: string;
@@ -141,6 +151,7 @@ export type TSettings = {
     enabledNavigationWidget?: boolean;
     isAutoScale?: boolean;
     isHighestLowestMarkerEnabled?: boolean;
+    isSmoothChartEnabled?: boolean;
     theme?: string;
     activeLanguages?: Array<string | TLanguage> | null;
     whitespace?: number;
@@ -377,6 +388,7 @@ export type TNewChartPayload = {
     msPerPx?: number;
     pipSize?: number;
     isMobile: boolean;
+    isSmoothChartEnabled?: boolean;
     yAxisMargin?: {
         top: number;
         bottom: number;
