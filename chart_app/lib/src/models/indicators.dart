@@ -40,7 +40,7 @@ class IndicatorsModel {
 
   /// To remove an existing indicator
   void removeIndicator(int index) {
-    indicatorsRepo.remove(index);
+    indicatorsRepo.removeAt(index);
   }
 
   /// To clear all indicators
