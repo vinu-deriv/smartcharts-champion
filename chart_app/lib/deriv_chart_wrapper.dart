@@ -339,6 +339,7 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                       chartAxisConfig: ChartAxisConfig(
                         maxCurrentTickOffset:
                             _getMaxCurrentTickOffset(rightPadding),
+                            smoothScrolling: configModel.isSmoothChartEnabled
                       ),
                       msPerPx: configModel.startWithDataFitMode
                           ? null
