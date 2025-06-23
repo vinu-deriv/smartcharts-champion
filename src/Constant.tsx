@@ -634,14 +634,14 @@ const getADXIndicatorConfig: TDefaultIndicatorConfigFn = () => ({
             type: 'colorpicker',
         },
         {
-            path: 'barStyle.positiveColor',
+            path: 'barStyle.bullishColor',
             title: t.translate('Positive Bar'),
             defaultValue: '#00DD00',
             category: 'inputs',
             type: 'colorpicker',
         },
         {
-            path: 'barStyle.negativeColor',
+            path: 'barStyle.bearishColor',
             title: t.translate('Negative Bar'),
             defaultValue: '#FF0000',
             category: 'inputs',
@@ -692,14 +692,14 @@ const getAwesomeOscillatorIndicatorConfig: TDefaultIndicatorConfigFn = () => ({
     },
     parameters: [
         {
-            path: 'barStyle.positiveColor',
+            path: 'barStyle.bullishColor',
             title: t.translate('Increasing Bar'),
             defaultValue: '#00DD00',
             category: 'inputs',
             type: 'colorpicker',
         },
         {
-            path: 'barStyle.negativeColor',
+            path: 'barStyle.bearishColor',
             title: t.translate('Decreasing Bar'),
             defaultValue: '#FF0000',
             category: 'inputs',
@@ -756,14 +756,14 @@ const getGatorIndicatorConfig: TDefaultIndicatorConfigFn = () => ({
     },
     parameters: [
         {
-            path: 'barStyle.positiveColor',
+            path: 'barStyle.bullishColor',
             title: t.translate('Increasing Bar'),
             defaultValue: '#00DD00',
             category: 'inputs',
             type: 'colorpicker',
         },
         {
-            path: 'barStyle.negativeColor',
+            path: 'barStyle.bearishColor',
             title: t.translate('Decreasing Bar'),
             defaultValue: '#FF0000',
             category: 'inputs',
@@ -837,14 +837,14 @@ const getMACDIndicatorConfig: TDefaultIndicatorConfigFn = () => ({
             type: 'colorpicker',
         },
         {
-            path: 'barStyle.positiveColor',
+            path: 'barStyle.bullishColor',
             title: t.translate('Increasing Bar'),
             defaultValue: '#00DD00',
             category: 'inputs',
             type: 'colorpicker',
         },
         {
-            path: 'barStyle.negativeColor',
+            path: 'barStyle.bearishColor',
             title: t.translate('Decreasing Bar'),
             defaultValue: '#FF0000',
             category: 'inputs',

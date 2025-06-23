@@ -172,11 +172,17 @@ const config = {
         new SpriteLoaderPlugin(),
         new CopyWebpackPlugin({
             patterns: [
+                // Copy Flutter assets to root level (where Flutter expects them)
+                {
+                    from: './chart_app/build/web/assets',
+                    to: './assets',
+                },
+                // Copy other Flutter files to chart directory (excluding assets)
                 {
                     from: './chart_app/build/web',
                     to: './chart',
                     globOptions: {
-                        ignore: ['**/packages/**'],
+                        ignore: ['**/packages/**', '**/assets/**'],
                     },
                 },
             ],

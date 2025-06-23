@@ -13,10 +13,7 @@ DataSeries<Tick> getDataSeries(
   final bool isLightMode = configModel.theme is ChartDefaultLightTheme;
   // Min granularity 1m
   if (ticks is List<Candle> && granularity >= 60000) {
-    final CandleStyle style = CandleStyle(
-      positiveColor: Color.fromRGBO(0, 195, 144, opacity),
-      negativeColor: Color.fromRGBO(222, 0, 64, opacity),
-    );
+    final CandleStyle style = configModel.theme.candleStyle;
 
     switch (configModel.style) {
       case ChartStyle.candles:
@@ -31,11 +28,6 @@ DataSeries<Tick> getDataSeries(
   }
   return CustomLineSeries(
     ticks,
-    style: LineStyle(
-      color: isLightMode
-          ? Color.fromRGBO(0, 0, 0, opacity)
-          : Color.fromRGBO(255, 255, 255, opacity),
-      hasArea: true,
-    ),
+    style: configModel.theme.lineStyle,
   );
 }
