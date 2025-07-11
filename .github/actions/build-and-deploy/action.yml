@@ -1,3 +1,5 @@
+# Reusable action for building and deploying to Cloudflare Pages
+# Handles both Flutter chart component and main application builds
 name: "Build and Deploy to Cloudflare Pages"
 description: "Reusable action to build and deploy the application to Cloudflare Pages"
 
@@ -42,7 +44,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Full history needed for proper commit tracking
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -112,7 +114,7 @@ runs:
         DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
           --project-name=${{ inputs.project_name }} \
           --branch ${{ inputs.branch_name }} \
-          --commit-dirty=true 2>&1)
+          --commit-dirty=true 2>&1)  # Capture both stdout and stderr for URL extraction
 
         echo "$DEPLOY_OUTPUT"
 

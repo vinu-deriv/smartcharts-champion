@@ -1,3 +1,6 @@
+# Production deployment workflow
+# Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets
+
 name: Deploy to Production
 
 on:
@@ -6,6 +9,7 @@ on:
       - master
   workflow_dispatch:
 
+# Queue deployments to prevent conflicts
 concurrency:
   group: deploy-production
   cancel-in-progress: false

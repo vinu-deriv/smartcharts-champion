@@ -1,3 +1,6 @@
+# Preview deployment workflow
+# Cancels previous deployments when new commits are pushed to PR
+
 name: Deploy Preview
 
 on:
@@ -6,6 +9,7 @@ on:
       - master
     types: [opened, synchronize, reopened]
 
+# Cancel outdated deployments per PR
 concurrency:
   group: deploy-preview-${{ github.event.number }}
   cancel-in-progress: true
