@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:js_interop';
 import 'dart:math';
 import 'dart:ui';
 
@@ -40,7 +39,7 @@ class IndicatorsModel {
 
   /// To remove an existing indicator
   void removeIndicator(int index) {
-    indicatorsRepo.remove(index);
+    indicatorsRepo.removeAt(index);
   }
 
   /// To clear all indicators
