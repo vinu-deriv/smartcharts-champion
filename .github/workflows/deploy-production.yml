@@ -1,0 +1,30 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  FLUTTER_VERSION: '3.24.1'
+  FLUTTER_WEB_RENDERER: 'html'
+  NODE_VERSION: '20.x'
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Deploy to Cloudflare Pages
+        uses: ./.github/actions/build-and-deploy
+        with:
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          project_name: 'smartcharts-champion'
+          branch_name: 'master'
+          node_version: ${{ env.NODE_VERSION }}
+          flutter_version: ${{ env.FLUTTER_VERSION }}
+          flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
