@@ -4,6 +4,11 @@ on:
   pull_request:
     branches:
       - master
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: deploy-preview-${{ github.event.number }}
+  cancel-in-progress: true
 
 env:
   FLUTTER_VERSION: '3.24.1'
@@ -23,8 +28,14 @@ jobs:
       - name: Generate branch slug
         id: branch-slug
         run: |
-          BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g')
+          BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g' | tr '[:upper:]' '[:lower:]')
+          # Ensure branch slug is not empty and has max length for Cloudflare
+          if [ -z "$BRANCH_SLUG" ]; then
+            BRANCH_SLUG="pr-${{ github.event.number }}"
+          fi
+          BRANCH_SLUG=$(echo "$BRANCH_SLUG" | cut -c1-63)
           echo "branch_slug=$BRANCH_SLUG" >> $GITHUB_OUTPUT
+          echo "Generated branch slug: $BRANCH_SLUG"
 
       - name: Deploy to Cloudflare Pages
         uses: ./.github/actions/build-and-deploy
@@ -36,3 +47,4 @@ jobs:
           node_version: ${{ env.NODE_VERSION }}
           flutter_version: ${{ env.FLUTTER_VERSION }}
           flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
+          environment: 'preview'

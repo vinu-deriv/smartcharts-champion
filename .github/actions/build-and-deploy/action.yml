@@ -1,39 +1,43 @@
-name: 'Build and Deploy to Cloudflare Pages'
-description: 'Reusable action to build and deploy the application to Cloudflare Pages'
+name: "Build and Deploy to Cloudflare Pages"
+description: "Reusable action to build and deploy the application to Cloudflare Pages"
 
 inputs:
   cloudflare_api_token:
-    description: 'Cloudflare API Token'
+    description: "Cloudflare API Token"
     required: true
   cloudflare_account_id:
-    description: 'Cloudflare Account ID'
+    description: "Cloudflare Account ID"
     required: true
   project_name:
-    description: 'Cloudflare Pages project name'
+    description: "Cloudflare Pages project name"
     required: true
   branch_name:
-    description: 'Branch name for deployment'
+    description: "Branch name for deployment"
     required: true
   node_version:
-    description: 'Node.js version'
+    description: "Node.js version"
     required: false
-    default: '20.x'
+    default: "20.x"
   flutter_version:
-    description: 'Flutter version'
+    description: "Flutter version"
     required: false
-    default: '3.24.1'
+    default: "3.24.1"
   flutter_web_renderer:
-    description: 'Flutter web renderer'
+    description: "Flutter web renderer"
     required: false
-    default: 'html'
+    default: "html"
+  environment:
+    description: "Deployment environment (production/preview)"
+    required: false
+    default: "preview"
 
 outputs:
   deployment_url:
-    description: 'Deployment URL'
+    description: "Deployment URL"
     value: ${{ steps.deploy.outputs.deployment_url }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -44,7 +48,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node_version }}
-        cache: 'npm'
+        cache: "npm"
 
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -68,30 +72,67 @@ runs:
       shell: bash
       run: npm run build:app
 
+    - name: Validate build output
+      shell: bash
+      run: |
+        if [ ! -d "dist" ]; then
+          echo "Error: dist directory not found. Build may have failed."
+          exit 1
+        fi
+        if [ ! -f "index.html" ]; then
+          echo "Error: index.html not found."
+          exit 1
+        fi
+        echo "Build validation passed"
+
     - name: Prepare deployment files
       shell: bash
       run: |
         mkdir -p deploy
         cp index.html manifest.json sw.js nojs-smartcharts.css deploy/
-        cp -r dist deploy/
+        cp -r dist deploy/ # This is intentional, because of the way the paths are structured
         cp -r dist/* deploy/
         if [ -d "sass/favicons" ]; then
           mkdir -p deploy/sass
           cp -r sass/favicons deploy/sass/
         fi
+        echo "Deployment files prepared successfully"
 
     - name: Install Wrangler
       shell: bash
-      run: npm install -g wrangler@3.1.0
+      run: npm install -g wrangler@latest
 
     - name: Deploy to Cloudflare Pages
       id: deploy
       shell: bash
       run: |
-        wrangler pages deploy deploy \
+        set -e
+        echo "Starting deployment to Cloudflare Pages..."
+
+        DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
           --project-name=${{ inputs.project_name }} \
           --branch ${{ inputs.branch_name }} \
-          --commit-dirty=true
+          --commit-dirty=true 2>&1)
+
+        echo "$DEPLOY_OUTPUT"
+
+        # Extract deployment URL from output
+        DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o 'https://[^[:space:]]*\.pages\.dev' | head -1)
+
+        if [ -n "$DEPLOYMENT_URL" ]; then
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Deployment successful: $DEPLOYMENT_URL"
+        else
+          echo "Warning: Could not extract deployment URL from output"
+          # Fallback URL construction
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            FALLBACK_URL="https://${{ inputs.project_name }}.pages.dev"
+          else
+            FALLBACK_URL="https://${{ inputs.branch_name }}.${{ inputs.project_name }}.pages.dev"
+          fi
+          echo "deployment_url=$FALLBACK_URL" >> $GITHUB_OUTPUT
+          echo "Using fallback URL: $FALLBACK_URL"
+        fi
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}

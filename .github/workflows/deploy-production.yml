@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 env:
   FLUTTER_VERSION: '3.24.1'
@@ -16,6 +21,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      actions: read
 
     steps:
       - name: Deploy to Cloudflare Pages
@@ -28,3 +34,4 @@ jobs:
           node_version: ${{ env.NODE_VERSION }}
           flutter_version: ${{ env.FLUTTER_VERSION }}
           flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
+          environment: 'production'
