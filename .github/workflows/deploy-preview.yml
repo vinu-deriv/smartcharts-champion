@@ -42,7 +42,7 @@ jobs:
           echo "Generated branch slug: $BRANCH_SLUG"
 
       - name: Deploy to Cloudflare Pages
-        uses: ./.github/actions/build-and-deploy
+        uses: "./.github/actions/build-and-deploy"
         with:
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
