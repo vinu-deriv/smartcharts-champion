@@ -96,5 +96,8 @@
     .sc-chart-mode .sc-dialog {
         width: 300px;
         left: auto;
+        max-height: 555px;
+        height: calc(100% - 32px);
+        overflow-x: inherit;
     }
 }
