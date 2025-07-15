@@ -44,7 +44,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Full history needed for proper commit tracking
+        fetch-depth: 0 # Full history needed for proper commit tracking
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -111,29 +111,21 @@ runs:
         set -e
         echo "Starting deployment to Cloudflare Pages..."
 
+        # Run the deployment and capture output
         DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
           --project-name=${{ inputs.project_name }} \
           --branch ${{ inputs.branch_name }} \
-          --commit-dirty=true 2>&1)  # Capture both stdout and stderr for URL extraction
+          --commit-dirty=true 2>&1)
 
+        # Output the result of the deployment (Cloudflare handles the URL)
         echo "$DEPLOY_OUTPUT"
 
-        # Extract deployment URL from output
-        DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o 'https://[^[:space:]]*\.pages\.dev' | head -1)
-
-        if [ -n "$DEPLOYMENT_URL" ]; then
-          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-          echo "Deployment successful: $DEPLOYMENT_URL"
+        # Check if deployment was successful based on the output
+        if echo "$DEPLOY_OUTPUT" | grep -q 'Deployment successful'; then
+          echo "Deployment successful"
         else
-          echo "Warning: Could not extract deployment URL from output"
-          # Fallback URL construction
-          if [ "${{ inputs.environment }}" = "production" ]; then
-            FALLBACK_URL="https://${{ inputs.project_name }}.pages.dev"
-          else
-            FALLBACK_URL="https://${{ inputs.branch_name }}.${{ inputs.project_name }}.pages.dev"
-          fi
-          echo "deployment_url=$FALLBACK_URL" >> $GITHUB_OUTPUT
-          echo "Using fallback URL: $FALLBACK_URL"
+          echo "Error: Deployment failed"
+          exit 1
         fi
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
