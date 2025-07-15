@@ -47,8 +47,8 @@ jobs:
       - name: Deploy to Cloudflare Pages
         uses: "./.github/actions/build-and-deploy"
         with:
-          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_TEST_LINKS_API_TOKEN }}
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_TEST_LINKS_ACCOUNT_ID }}
           project_name: 'smartcharts-champion'
           branch_name: ${{ steps.branch-slug.outputs.branch_slug }}
           node_version: ${{ env.NODE_VERSION }}
