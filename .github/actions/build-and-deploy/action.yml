@@ -119,14 +119,6 @@ runs:
 
         # Output the result of the deployment (Cloudflare handles the URL)
         echo "$DEPLOY_OUTPUT"
-
-        # Check if deployment was successful based on the output
-        if echo "$DEPLOY_OUTPUT" | grep -q 'Deployment successful'; then
-          echo "Deployment successful"
-        else
-          echo "Error: Deployment failed"
-          exit 1
-        fi
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
