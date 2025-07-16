@@ -19,15 +19,13 @@ env:
   FLUTTER_WEB_RENDERER: 'html'
   NODE_VERSION: '20.x'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-      pull-requests: write
-      statuses: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,6 +45,7 @@ jobs:
           echo "Generated branch slug: $BRANCH_SLUG"
 
       - name: Deploy to Cloudflare Pages
+        id: deploy
         uses: "./.github/actions/build-and-deploy"
         with:
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_TEST_LINKS_API_TOKEN }}
@@ -58,3 +57,53 @@ jobs:
           flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
           environment: 'preview'
           commit_hash: ${{ github.event.pull_request.head.sha }}
+
+      - name: Comment PR with deployment URL
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request_target' && steps.deploy.outputs.deployment_url
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.deploy.outputs.deployment_url }}';
+            
+            if (!deploymentUrl || deploymentUrl === '') {
+              console.log('No deployment URL available to comment');
+              return;
+            }
+            
+            const comment = `🚀 **Preview Deployment**
+            
+            Your changes have been deployed to: ${deploymentUrl}
+            
+            This preview will be updated automatically when you push new commits to this PR.`;
+            
+            // Check if we already commented on this PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('🚀 **Preview Deployment**')
+            );
+            
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: comment
+              });
+              console.log('Updated existing deployment comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: comment
+              });
+              console.log('Created new deployment comment');
+            }

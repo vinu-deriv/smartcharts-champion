@@ -118,11 +118,36 @@ runs:
         DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
           --project-name=${{ inputs.project_name }} \
           --branch ${{ inputs.branch_name }} \
-          --commit-hash=${{ inputs.commit_hash }} \
-          --commit-dirty=true 2>&1)
+          --commit-hash=${{ inputs.commit_hash }} 2>&1)
 
-        # Output the result of the deployment (Cloudflare handles the URL)
+        # Output the result of the deployment
         echo "$DEPLOY_OUTPUT"
+
+        # Extract deployment URL from output
+        # Cloudflare typically outputs URLs in format: https://branch-name.project-name.pages.dev
+        # or custom domain format: https://branch-name.project-name.deriv.cloud
+
+        # Try to extract URL from wrangler output
+        DEPLOYMENT_URL=""
+        if echo "$DEPLOY_OUTPUT" | grep -q "https://.*\.deriv\.cloud"; then
+          DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o "https://[^[:space:]]*\.deriv\.cloud[^[:space:]]*" | head -1)
+        elif echo "$DEPLOY_OUTPUT" | grep -q "https://.*\.pages\.dev"; then
+          DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o "https://[^[:space:]]*\.pages\.dev[^[:space:]]*" | head -1)
+        fi
+
+        # If URL not found in output, construct it based on branch and project name
+        if [ -z "$DEPLOYMENT_URL" ]; then
+          # Check if custom domain (.deriv.cloud) is configured first
+          DEPLOYMENT_URL="https://${{ inputs.branch_name }}.${{ inputs.project_name }}.deriv.cloud"
+          
+          # Test if .deriv.cloud URL is accessible, if not fall back to .pages.dev
+          if ! curl -s --head --fail "$DEPLOYMENT_URL" > /dev/null 2>&1; then
+            DEPLOYMENT_URL="https://${{ inputs.branch_name }}.${{ inputs.project_name }}.pages.dev"
+          fi
+        fi
+
+        echo "Deployment URL: $DEPLOYMENT_URL"
+        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}

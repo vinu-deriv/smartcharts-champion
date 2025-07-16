@@ -18,14 +18,11 @@ env:
   FLUTTER_VERSION: '3.24.1'
   FLUTTER_WEB_RENDERER: 'html'
   NODE_VERSION: '20.x'
-
+permissions:
+  contents: read
 jobs:
   deploy-production:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-      actions: read
 
     steps:
       - name: Checkout repository
