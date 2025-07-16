@@ -76,16 +76,21 @@ jobs:
             
             This preview will be updated automatically when you push new commits to this PR.`;
             
-            // Check if we already commented on this PR
+            // Check if we already commented on this PR - look for any deployment-related comment
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number
             });
             
+            // Find any existing deployment comment (broader search to catch all formats)
             const existingComment = comments.find(comment => 
               comment.user.login === 'github-actions[bot]' && 
-              comment.body.includes('🚀 **Preview Deployment**')
+              (comment.body.includes('🚀 **Preview Deployment**') || 
+               comment.body.includes('🚀 Deploy Preview Ready!') ||
+               comment.body.includes('Preview URL:') ||
+               comment.body.includes('deployed to:') ||
+               comment.body.includes('deployment'))
             );
             
             if (existingComment) {
