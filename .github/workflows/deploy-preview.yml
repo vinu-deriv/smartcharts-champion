@@ -64,17 +64,15 @@ jobs:
         with:
           script: |
             const deploymentUrl = '${{ steps.deploy.outputs.deployment_url }}';
+            const branchSlug = '${{ steps.branch-slug.outputs.branch_slug }}';
+            const commitHash = '${{ github.event.pull_request.head.sha }}';
             
             if (!deploymentUrl || deploymentUrl === '') {
               console.log('No deployment URL available to comment');
               return;
             }
             
-            const comment = `🚀 **Preview Deployment**
-            
-            Your changes have been deployed to: ${deploymentUrl}
-            
-            This preview will be updated automatically when you push new commits to this PR.`;
+            const comment = `🚀 **Deploy Preview Ready!**\n\nYour changes have been deployed to Cloudflare Pages:\n\n**Preview URL:** ${deploymentUrl}\n\n**Branch:** ${branchSlug}\n**Commit:** ${commitHash}\n\n---\n\n*This comment will be updated on each new commit.*`;
             
             // Check if we already commented on this PR - look for any deployment-related comment
             const { data: comments } = await github.rest.issues.listComments({
@@ -87,7 +85,7 @@ jobs:
             const existingComment = comments.find(comment => 
               comment.user.login === 'github-actions[bot]' && 
               (comment.body.includes('🚀 **Preview Deployment**') || 
-               comment.body.includes('🚀 Deploy Preview Ready!') ||
+               comment.body.includes('🚀 **Deploy Preview Ready!**') ||
                comment.body.includes('Preview URL:') ||
                comment.body.includes('deployed to:') ||
                comment.body.includes('deployment'))
