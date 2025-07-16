@@ -38,8 +38,11 @@ inputs:
 
 outputs:
   deployment_url:
-    description: "Deployment URL"
+    description: "Primary deployment URL"
     value: ${{ steps.deploy.outputs.deployment_url }}
+  all_urls:
+    description: "All URLs found in Cloudflare output"
+    value: ${{ steps.deploy.outputs.all_urls }}
 
 runs:
   using: "composite"
@@ -123,31 +126,56 @@ runs:
         # Output the result of the deployment
         echo "$DEPLOY_OUTPUT"
 
-        # Extract deployment URL from output
-        # Cloudflare typically outputs URLs in format: https://branch-name.project-name.pages.dev
-        # or custom domain format: https://branch-name.project-name.deriv.cloud
+        # Extract URLs from Cloudflare output
+        DERIV_CLOUD_URL=""
+        PAGES_DEV_URL=""
 
-        # Try to extract URL from wrangler output
-        DEPLOYMENT_URL=""
-        if echo "$DEPLOY_OUTPUT" | grep -q "https://.*\.deriv\.cloud"; then
-          DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o "https://[^[:space:]]*\.deriv\.cloud[^[:space:]]*" | head -1)
-        elif echo "$DEPLOY_OUTPUT" | grep -q "https://.*\.pages\.dev"; then
-          DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o "https://[^[:space:]]*\.pages\.dev[^[:space:]]*" | head -1)
+        # Look for URLs in the Cloudflare output
+        while IFS= read -r line; do
+          if [[ $line == *"https://"*".deriv.cloud"* ]]; then
+            DERIV_CLOUD_URL=$(echo "$line" | grep -oE 'https://[^[:space:]]+\.deriv\.cloud[^[:space:]]*' | head -1)
+          elif [[ $line == *"https://"*".pages.dev"* ]]; then
+            PAGES_DEV_URL=$(echo "$line" | grep -oE 'https://[^[:space:]]+\.pages\.dev[^[:space:]]*' | head -1)
+          fi
+        done <<< "$DEPLOY_OUTPUT"
+
+        echo "=== Extracted URLs from Cloudflare ==="
+        echo "Deriv Cloud URL: $DERIV_CLOUD_URL"
+        echo "Pages Dev URL: $PAGES_DEV_URL"
+
+        # Prioritize .deriv.cloud over .pages.dev
+        PRIMARY_URL=""
+        ALTERNATE_URL=""
+
+        if [[ -n "$DERIV_CLOUD_URL" ]]; then
+          PRIMARY_URL="$DERIV_CLOUD_URL"
+          ALTERNATE_URL="$PAGES_DEV_URL"
+          echo "Primary URL: $DERIV_CLOUD_URL (deriv.cloud found)"
+        elif [[ -n "$PAGES_DEV_URL" ]]; then
+          PRIMARY_URL="$PAGES_DEV_URL"
+          ALTERNATE_URL=""
+          echo "Primary URL: $PAGES_DEV_URL (pages.dev fallback)"
+        else
+          echo "Warning: No URLs found in Cloudflare output"
+          PRIMARY_URL=""
+          ALTERNATE_URL=""
         fi
 
-        # If URL not found in output, construct it based on branch and project name
-        if [ -z "$DEPLOYMENT_URL" ]; then
-          # Check if custom domain (.deriv.cloud) is configured first
-          DEPLOYMENT_URL="https://${{ inputs.branch_name }}.${{ inputs.project_name }}.deriv.cloud"
-          
-          # Test if .deriv.cloud URL is accessible, if not fall back to .pages.dev
-          if ! curl -s --head --fail "$DEPLOYMENT_URL" > /dev/null 2>&1; then
-            DEPLOYMENT_URL="https://${{ inputs.branch_name }}.${{ inputs.project_name }}.pages.dev"
+        # Create comma-separated list of all URLs (filter out empty ones)
+        ALL_URLS=""
+        if [[ -n "$DERIV_CLOUD_URL" ]]; then
+          ALL_URLS="$DERIV_CLOUD_URL"
+        fi
+        if [[ -n "$PAGES_DEV_URL" ]]; then
+          if [[ -n "$ALL_URLS" ]]; then
+            ALL_URLS="$ALL_URLS,$PAGES_DEV_URL"
+          else
+            ALL_URLS="$PAGES_DEV_URL"
           fi
         fi
 
-        echo "Deployment URL: $DEPLOYMENT_URL"
-        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+        echo "deployment_url=$PRIMARY_URL" >> $GITHUB_OUTPUT
+        echo "all_urls=$ALL_URLS" >> $GITHUB_OUTPUT
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
