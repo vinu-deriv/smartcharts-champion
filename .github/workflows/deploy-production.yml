@@ -42,3 +42,4 @@ jobs:
           flutter_version: ${{ env.FLUTTER_VERSION }}
           flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
           environment: 'production'
+          commit_hash: ${{ github.sha }}

@@ -32,6 +32,9 @@ inputs:
     description: "Deployment environment (production/preview)"
     required: false
     default: "preview"
+  commit_hash:
+    description: "Commit hash for deployment"
+    required: true
 
 outputs:
   deployment_url:
@@ -115,6 +118,7 @@ runs:
         DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
           --project-name=${{ inputs.project_name }} \
           --branch ${{ inputs.branch_name }} \
+          --commit-hash=${{ inputs.commit_hash }} \
           --commit-dirty=true 2>&1)
 
         # Output the result of the deployment (Cloudflare handles the URL)

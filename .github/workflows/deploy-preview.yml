@@ -4,7 +4,7 @@
 name: Deploy Preview
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - master
     types: [opened, synchronize, reopened]
@@ -31,11 +31,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Generate branch slug
         id: branch-slug
         run: |
-          BRANCH_SLUG=$(echo "${{ github.head_ref }}" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g' | tr '[:upper:]' '[:lower:]')
+          BRANCH_SLUG=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g' | tr '[:upper:]' '[:lower:]')
           # Ensure branch slug is not empty and has max length for Cloudflare
           if [ -z "$BRANCH_SLUG" ]; then
             BRANCH_SLUG="pr-${{ github.event.number }}"
@@ -55,3 +57,4 @@ jobs:
           flutter_version: ${{ env.FLUTTER_VERSION }}
           flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
           environment: 'preview'
+          commit_hash: ${{ github.event.pull_request.head.sha }}
