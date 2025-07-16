@@ -32,11 +32,23 @@ inputs:
     description: "Deployment environment (production/preview)"
     required: false
     default: "preview"
+  commit_hash:
+    description: "Commit hash for deployment"
+    required: true
 
 outputs:
   deployment_url:
-    description: "Deployment URL"
+    description: "Primary deployment URL"
     value: ${{ steps.deploy.outputs.deployment_url }}
+  all_urls:
+    description: "All URLs found in Cloudflare output"
+    value: ${{ steps.deploy.outputs.all_urls }}
+  preview_url:
+    description: "Preview URL (commit-based)"
+    value: ${{ steps.deploy.outputs.preview_url }}
+  branch_url:
+    description: "Branch URL (branch-based)"
+    value: ${{ steps.deploy.outputs.branch_url }}
 
 runs:
   using: "composite"
@@ -115,18 +127,99 @@ runs:
         DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
           --project-name=${{ inputs.project_name }} \
           --branch ${{ inputs.branch_name }} \
-          --commit-dirty=true 2>&1)
+          --commit-hash=${{ inputs.commit_hash }} 2>&1)
 
-        # Output the result of the deployment (Cloudflare handles the URL)
+        # Output the result of the deployment
         echo "$DEPLOY_OUTPUT"
 
-        # Check if deployment was successful based on the output
-        if echo "$DEPLOY_OUTPUT" | grep -q 'Deployment successful'; then
-          echo "Deployment successful"
-        else
-          echo "Error: Deployment failed"
-          exit 1
+        # Extract ALL URLs from Cloudflare output
+        echo "=== Extracting URLs from Cloudflare output ==="
+
+        # Find all URLs in the output (both deriv.cloud and pages.dev)
+        ALL_FOUND_URLS=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^[:space:]]+\.(deriv\.cloud|pages\.dev)[^[:space:]]*' | sort -u || true)
+
+        echo "All found URLs:"
+        echo "$ALL_FOUND_URLS"
+
+        # Separate by domain
+        DERIV_CLOUD_URLS=$(echo "$ALL_FOUND_URLS" | grep '\.deriv\.cloud' || true)
+        PAGES_DEV_URLS=$(echo "$ALL_FOUND_URLS" | grep '\.pages\.dev' || true)
+
+        echo "Deriv Cloud URLs found:"
+        echo "$DERIV_CLOUD_URLS"
+        echo "Pages Dev URLs found:"
+        echo "$PAGES_DEV_URLS"
+
+        # Process URLs based on what we found
+        PREVIEW_URL=""
+        BRANCH_URL=""
+        BRANCH_NAME="${{ inputs.branch_name }}"
+
+        # Choose which set of URLs to process (prefer deriv.cloud)
+        URLS_TO_PROCESS=""
+        if [[ -n "$DERIV_CLOUD_URLS" ]]; then
+          URLS_TO_PROCESS="$DERIV_CLOUD_URLS"
+          echo "Processing deriv.cloud URLs"
+        elif [[ -n "$PAGES_DEV_URLS" ]]; then
+          URLS_TO_PROCESS="$PAGES_DEV_URLS"
+          echo "Processing pages.dev URLs"
         fi
+
+        # Process the URLs
+        if [[ -n "$URLS_TO_PROCESS" ]]; then
+          # Convert to array by reading line by line
+          URL_COUNT=0
+          while IFS= read -r url; do
+            if [[ -n "$url" ]]; then
+              URL_COUNT=$((URL_COUNT + 1))
+              if [[ "$url" == *"$BRANCH_NAME"* ]]; then
+                BRANCH_URL="$url"
+                echo "Found branch URL: $BRANCH_URL"
+              else
+                PREVIEW_URL="$url"
+                echo "Found preview URL: $PREVIEW_URL"
+              fi
+            fi
+          done <<< "$URLS_TO_PROCESS"
+          
+          echo "Processed $URL_COUNT URLs"
+        else
+          echo "Warning: No URLs found in Cloudflare output"
+        fi
+
+        # Set primary URL (prefer preview, fallback to branch)
+        PRIMARY_URL=""
+        if [[ -n "$PREVIEW_URL" ]]; then
+          PRIMARY_URL="$PREVIEW_URL"
+        elif [[ -n "$BRANCH_URL" ]]; then
+          PRIMARY_URL="$BRANCH_URL"
+        fi
+
+        # Create comma-separated list of all URLs
+        ALL_URLS_LIST=""
+        if [[ -n "$PREVIEW_URL" ]]; then
+          ALL_URLS_LIST="$PREVIEW_URL"
+        fi
+        if [[ -n "$BRANCH_URL" ]]; then
+          if [[ -n "$ALL_URLS_LIST" ]]; then
+            ALL_URLS_LIST="$ALL_URLS_LIST,$BRANCH_URL"
+          else
+            ALL_URLS_LIST="$BRANCH_URL"
+          fi
+        fi
+
+        echo "Final Preview URL: $PREVIEW_URL"
+        echo "Final Branch URL: $BRANCH_URL"
+        echo "Final Primary URL: $PRIMARY_URL"
+        echo "Final all URLs: $ALL_URLS_LIST"
+
+        # Set outputs
+        echo "deployment_url=$PRIMARY_URL" >> $GITHUB_OUTPUT
+        echo "all_urls=$ALL_URLS_LIST" >> $GITHUB_OUTPUT
+        echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
+        echo "branch_url=$BRANCH_URL" >> $GITHUB_OUTPUT
+
+        echo "=== Outputs set successfully ==="
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
