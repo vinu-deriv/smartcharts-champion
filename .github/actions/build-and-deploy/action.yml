@@ -53,6 +53,10 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Fetch all history for accurate commit hash
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
