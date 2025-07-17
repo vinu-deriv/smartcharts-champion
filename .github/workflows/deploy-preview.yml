@@ -30,7 +30,7 @@ jobs:
       - name: Verify user
         uses: 'deriv-com/shared-actions/.github/actions/verify_user_in_organization@v3'
         with:
-          username: ${{github.event.pull_request.user.login}}
+          username: ${{ github.event.pull_request.user.login }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - name: Checkout repository
         uses: actions/checkout@v4
