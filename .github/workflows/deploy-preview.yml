@@ -39,8 +39,10 @@ jobs:
 
       - name: Generate branch slug
         id: branch-slug
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH_SLUG=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g' | tr '[:upper:]' '[:lower:]')
+          BRANCH_SLUG=$(echo "$PR_HEAD_REF" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g' | tr '[:upper:]' '[:lower:]')
           # Ensure branch slug is not empty and has max length for Cloudflare
           if [ -z "$BRANCH_SLUG" ]; then
             BRANCH_SLUG="pr-${{ github.event.number }}"
@@ -91,45 +93,45 @@ jobs:
             | Commit | \`${shortCommit}\` |
             | Status | ✅ Deploy successful |`;
 
-                        // Add preview URL if it exists
-                        if (previewUrl) {
-                          commentBody += `
+            // Add preview URL if it exists
+            if (previewUrl) {
+              commentBody += `
             | Preview URL | [${previewUrl}](${previewUrl}) |`;
-                        }
+            }
 
-                        // Add branch URL if it exists
-                        if (branchUrl) {
-                          commentBody += `
+            // Add branch URL if it exists
+            if (branchUrl) {
+              commentBody += `
             | Branch URL | [${branchUrl}](${branchUrl}) |`;
-                        }
+            }
 
-                        // If no specific URLs, fall back to primary
-                        if (!previewUrl && !branchUrl && primaryUrl) {
-                          commentBody += `
+            // If no specific URLs, fall back to primary
+            if (!previewUrl && !branchUrl && primaryUrl) {
+              commentBody += `
             | Deployment URL | [${primaryUrl}](${primaryUrl}) |`;
-                        }
+            }
 
-                        const { data: comments } = await github.rest.issues.listComments({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: context.payload.pull_request.number
-                        });
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
 
-                        const existingComment = comments.find(comment =>
-                          comment.user.login === 'github-actions[bot]' &&
-                          (comment.body.includes('🚀 **Deploy Preview Ready!**') ||
-                          comment.body.includes('Preview URL') ||
-                          comment.body.includes('Branch URL') ||
-                          comment.body.includes('Deployment URL'))
-                        );
+            const existingComment = comments.find(comment =>
+              comment.user.login === 'github-actions[bot]' &&
+              (comment.body.includes('🚀 **Deploy Preview Ready!**') ||
+              comment.body.includes('Preview URL') ||
+              comment.body.includes('Branch URL') ||
+              comment.body.includes('Deployment URL'))
+            );
 
-                        if (existingComment) {
-                          await github.rest.issues.updateComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            comment_id: existingComment.id,
-                            body: commentBody
-                          });
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: commentBody
+              });
               console.log('🔁 Updated existing deployment comment.');
             } else {
               await github.rest.issues.createComment({
