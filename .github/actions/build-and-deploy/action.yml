@@ -56,8 +56,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Full history needed for proper commit tracking
-
+        fetch-depth: 0 # Fetch all history for accurate commit hash
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -76,10 +75,12 @@ runs:
 
     - name: Build Flutter chart component
       shell: bash
+      env:
+        FLUTTER_WEB_RENDERER: ${{ inputs.flutter_web_renderer }}
       run: |
         cd chart_app
         flutter pub get
-        flutter build web --web-renderer ${{ inputs.flutter_web_renderer }} --release
+        flutter build web --web-renderer "$FLUTTER_WEB_RENDERER" --release
         cd ..
 
     - name: Build application
@@ -119,15 +120,21 @@ runs:
     - name: Deploy to Cloudflare Pages
       id: deploy
       shell: bash
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
+        PROJECT_NAME: ${{ inputs.project_name }}
+        BRANCH_NAME: ${{ inputs.branch_name }}
+        COMMIT_HASH: ${{ inputs.commit_hash }}
       run: |
         set -e
         echo "Starting deployment to Cloudflare Pages..."
 
         # Run the deployment and capture output
         DEPLOY_OUTPUT=$(wrangler pages deploy deploy \
-          --project-name=${{ inputs.project_name }} \
-          --branch ${{ inputs.branch_name }} \
-          --commit-hash=${{ inputs.commit_hash }} 2>&1)
+          --project-name="$PROJECT_NAME" \
+          --branch "$BRANCH_NAME" \
+          --commit-hash="$COMMIT_HASH" 2>&1)
 
         # Output the result of the deployment
         echo "$DEPLOY_OUTPUT"
@@ -153,7 +160,6 @@ runs:
         # Process URLs based on what we found
         PREVIEW_URL=""
         BRANCH_URL=""
-        BRANCH_NAME="${{ inputs.branch_name }}"
 
         # Choose which set of URLs to process (prefer deriv.cloud)
         URLS_TO_PROCESS=""
@@ -220,6 +226,3 @@ runs:
         echo "branch_url=$BRANCH_URL" >> $GITHUB_OUTPUT
 
         echo "=== Outputs set successfully ==="
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
-        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
