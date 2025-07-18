@@ -85,6 +85,9 @@ class JSNewChart {
 
   /// Specifies the margin of yAxis.
   external JSYAxisMargin get yAxisMargin;
+
+  /// Whether smooth chart animations are enabled.
+  external bool? get isSmoothChartEnabled;
 }
 
 @JS()

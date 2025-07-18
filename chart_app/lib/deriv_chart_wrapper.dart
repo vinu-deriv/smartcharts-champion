@@ -262,8 +262,9 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                         : Color.fromRGBO(255, 255, 255,
                             configModel.isSymbolClosed ? 0.32 : 1);
 
-                    final Duration animationDuration = _getAnimationDuration(
-                        isTickGranularity: isTickGranularity);
+                    final Duration? animationDuration = configModel.isSmoothChartEnabled 
+                        ? null  // Uses flutter-chart default 300ms for smooth animations
+                        : _getAnimationDuration(isTickGranularity: isTickGranularity);
 
                     final int? rightPadding = _getRightPadding(
                         isTickGranularity, granularity, constraints.maxWidth);
@@ -339,6 +340,7 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                       chartAxisConfig: ChartAxisConfig(
                         maxCurrentTickOffset:
                             _getMaxCurrentTickOffset(rightPadding),
+                            smoothScrolling: configModel.isSmoothChartEnabled
                       ),
                       msPerPx: configModel.startWithDataFitMode
                           ? null

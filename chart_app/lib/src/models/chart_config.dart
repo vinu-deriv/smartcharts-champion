@@ -58,6 +58,9 @@ class ChartConfigModel extends ChangeNotifier {
   /// Specifies the margin of yAxis.
   JSYAxisMargin? yAxisMargin;
 
+  /// Whether smooth chart animations are enabled.
+  bool isSmoothChartEnabled = false;
+
   /// Show the time interval
   bool showTimeInterval = false;
 
@@ -181,6 +184,7 @@ class ChartConfigModel extends ChangeNotifier {
     isMobile = payload.isMobile;
     yAxisMargin = payload.yAxisMargin;
     symbol = payload.symbol ?? '';
+    isSmoothChartEnabled = payload.isSmoothChartEnabled ?? false;
 
     if (payload.chartType != null && payload.chartType!.isNotEmpty) {
       style = ChartStyle.values.byName(payload.chartType!);

@@ -17,6 +17,7 @@ export default class ChartSettingStore {
     historical = false;
     isAutoScale = true;
     isHighestLowestMarkerEnabled = true;
+    isSmoothChartEnabled = false;
     minimumLeftBars?: number;
     whitespace?: number;
 
@@ -29,6 +30,7 @@ export default class ChartSettingStore {
             historical: observable,
             isAutoScale: observable,
             isHighestLowestMarkerEnabled: observable,
+            isSmoothChartEnabled: observable,
             minimumLeftBars: observable,
             updateActiveLanguage: action.bound,
             setLanguage: action.bound,
@@ -39,6 +41,7 @@ export default class ChartSettingStore {
             setAutoScale: action.bound,
             setWhiteSpace: action.bound,
             toggleHighestLowestMarker: action.bound,
+            toggleSmoothChart: action.bound,
             whitespace: observable,
         });
 
@@ -80,6 +83,7 @@ export default class ChartSettingStore {
             position,
             isAutoScale,
             isHighestLowestMarkerEnabled,
+            isSmoothChartEnabled,
             theme,
             activeLanguages,
             whitespace,
@@ -116,6 +120,9 @@ export default class ChartSettingStore {
         if (isHighestLowestMarkerEnabled !== undefined) {
             this.toggleHighestLowestMarker(isHighestLowestMarkerEnabled);
         }
+        if (isSmoothChartEnabled !== undefined) {
+            this.toggleSmoothChart(isSmoothChartEnabled);
+        }
         this.setWhiteSpace(whitespace);
     }
     saveSetting() {
@@ -127,6 +134,7 @@ export default class ChartSettingStore {
                 position: this.position,
                 isAutoScale: this.isAutoScale,
                 isHighestLowestMarkerEnabled: this.isHighestLowestMarkerEnabled,
+                isSmoothChartEnabled: this.isSmoothChartEnabled,
                 minimumLeftBars: this.minimumLeftBars,
                 theme: this.theme,
                 whitespace: this.whitespace,
@@ -264,5 +272,15 @@ export default class ChartSettingStore {
             ` ${value ? 'Show' : 'Hide'} HighestLowestMarker.`
         );
         this.saveSetting();
+    }
+    toggleSmoothChart(value: boolean) {
+        if (this.isSmoothChartEnabled === value) {
+            return;
+        }
+        this.isSmoothChartEnabled = value;
+        logEvent(LogCategories.ChartControl, LogActions.ChartSetting, ` ${value ? 'Enable' : 'Disable'} Smooth Chart.`);
+        this.saveSetting();
+        // Refresh the chart to apply the new smooth chart setting
+        this.mainStore.chart.refreshChart();
     }
 }
