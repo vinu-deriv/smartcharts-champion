@@ -37,7 +37,7 @@ The deployment system consists of two main workflows and one reusable action:
 
 **Triggers:**
 - Pull request events: `opened`, `synchronize`, `reopened`
-- Only for PRs targeting the `master` branch
+- Triggers on PRs targeting any branch (`"**"`)
 
 **Features:**
 - Creates preview deployments for each PR
