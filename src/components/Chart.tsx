@@ -26,19 +26,12 @@ import RenderInsideChart from './RenderInsideChart';
 import SettingsDialog from './SettingsDialog';
 import ScrollToRecent from './ScrollToRecent';
 
-const Chart = React.forwardRef((props: TChartProps, ref) => {
-    const {
-        chart,
-        drawTools,
-        studies,
-        chartSetting,
-        chartType,
-        state,
-        loader,
-        chartAdapter,
-        crosshair,
-        timeperiod,
-    } = useStores();
+const Chart = React.forwardRef<
+    { hasPredictionIndicators(): boolean; triggerPopup(cancelCallback: () => void): void },
+    TChartProps
+>((props, ref) => {
+    const { chart, drawTools, studies, chartSetting, chartType, state, loader, chartAdapter, crosshair, timeperiod } =
+        useStores();
     const { chartId, init, destroy, isChartAvailable, chartContainerHeight, containerWidth } = chart;
     const { setCrosshairState } = crosshair;
     const { settingsDialog: studiesSettingsDialog, restoreStudies, activeItems } = studies;
@@ -144,7 +137,7 @@ const Chart = React.forwardRef((props: TChartProps, ref) => {
             className={classNames('smartcharts', `smartcharts-${theme}`, {
                 'smartcharts--navigation-widget': enabledNavigationWidget,
                 'smartcharts--loading': isLoading,
-                'smartcharts--has-markers': children && (children as NodeList).length,
+                'smartcharts--has-markers': children && React.Children.count(children) > 0,
                 [`smartcharts-${containerWidth}`]: !isMobile,
             })}
         >

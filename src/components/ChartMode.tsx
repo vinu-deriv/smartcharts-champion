@@ -2,7 +2,6 @@
 
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
 import { useStores } from 'src/store';
 import { TGranularity } from 'src/types';
 import '../../sass/components/_chart-mode.scss';

@@ -1,5 +1,4 @@
 import { observer } from 'mobx-react-lite';
-import React from 'react';
 import { useStores } from 'src/store';
 import '../../sass/components/_chart-size.scss';
 import { ZoomInIcon, ZoomOutIcon } from './Icons';

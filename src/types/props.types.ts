@@ -210,7 +210,6 @@ export type TBarrierUpdateProps = {
 };
 
 export type TChartProps = {
-    ref: React.RefObject<{ hasPredictionIndicators(): void; triggerPopup(arg: () => void): void }>;
     unsubscribeQuotes: BinaryAPI['unsubscribeQuotes'];
     getQuotes?: TGetQuotes;
     subscribeQuotes?: TSubscribeQuotes;

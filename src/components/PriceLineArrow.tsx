@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowGreenIcon, ArrowOrangeIcon } from './Icons';
 import { ARROW_HEIGHT, DIRECTIONS } from '../utils';
 

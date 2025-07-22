@@ -102,8 +102,8 @@ const DatePicker = React.memo((props: TDatePickerProps) => {
     const calendarRef = React.useRef<TCalendarRefProps>(null);
     const prev_focus = usePrevious(focus);
     const onClickOutside = React.useCallback(
-        e => {
-            if (!mainRef.current?.contains(e.target) && is_datepicker_visible) {
+        (e: MouseEvent) => {
+            if (!mainRef.current?.contains(e.target as Node) && is_datepicker_visible) {
                 setIsDatepickerVisible(false);
                 if (disableFocus) {
                     disableFocus();
@@ -200,7 +200,8 @@ const DatePicker = React.memo((props: TDatePickerProps) => {
                     placeholder={t.translate(placeholder)}
                     is_read_only
                     value={value}
-                    display_format={display_format} />
+                    display_format={display_format}
+                />
                 <CalendarIcon className='date-picker-calendar-icon' />
             </div>
             <div className={`datepicker-calendar ${is_datepicker_visible ? 'show' : ''}`}>
@@ -212,8 +213,7 @@ const DatePicker = React.memo((props: TDatePickerProps) => {
                     date_format={date_format}
                     has_today_btn={has_today_btn}
                     start_date={start_date}
-                >
-                </Calendar>
+                ></Calendar>
             </div>
         </div>
     );

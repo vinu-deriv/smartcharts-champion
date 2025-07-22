@@ -18,7 +18,7 @@ const Notification = ({ notifier }: TNotificationProps) => {
     const [messages, setMessages] = React.useState<TMessageObj[]>([]);
     const messages_ref = React.useRef<TMessageObj[]>(messages);
     messages_ref.current = messages;
-    const onRemove = React.useCallback(id => {
+    const onRemove = React.useCallback((id: number) => {
         setMessages(
             messages_ref.current.map((message: TMessageObj) => ({
                 ...message,

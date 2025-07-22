@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';

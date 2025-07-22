@@ -1,4 +1,3 @@
-import React from 'react';
 import { observer } from 'mobx-react-lite';
 import ListStore, { TListItem } from 'src/store/ListStore';
 import Scroll from './Scroll';
@@ -6,7 +5,7 @@ import '../../sass/components/_ciq-list.scss';
 
 type TListProps = {
     height: number;
-    children: React.ReactNode;
+    children: React.ReactNode | ((item: TListItem) => React.ReactNode);
     store: ListStore;
 };
 

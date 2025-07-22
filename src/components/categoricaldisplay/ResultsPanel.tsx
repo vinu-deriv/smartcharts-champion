@@ -15,7 +15,7 @@ import { TNormalItemProps } from './Item';
 export type TResultsPanelProps = {
     filteredItems: TCategorizedSymbols;
     onSelectItem?: (item: TProcessedSymbolItem, category_id: string) => void;
-    ItemType: (props: TNormalItemProps) => React.ReactElement | null;
+    ItemType: React.ComponentType<TNormalItemProps>;
     setCategoryElement: (element: HTMLElement | null, id: string) => void;
     activeHeadKey: null | string;
     disableAll?: boolean;

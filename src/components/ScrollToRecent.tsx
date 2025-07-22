@@ -1,4 +1,3 @@
-import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStores } from 'src/store';
 import '../../sass/components/_scroll.scss';

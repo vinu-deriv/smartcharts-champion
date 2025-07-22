@@ -1,5 +1,3 @@
-import React from 'react';
-
 const HamburgerDragIcon = () => (
     <div className='drag-icon'>
         <div></div>

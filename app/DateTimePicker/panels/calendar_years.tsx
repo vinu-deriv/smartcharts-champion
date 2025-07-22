@@ -1,6 +1,5 @@
 /* eslint-disable react/no-array-index-key */
 import moment from 'moment';
-import React from 'react';
 import { TCalendarViewProps } from '../calendar.props';
 
 export const CalendarYears = ({ calendar_date, isPeriodDisabled, onClick, selected_date }: TCalendarViewProps) => {

@@ -133,7 +133,7 @@ const SettingsPanelGroup = ({
                         onItemChange(item, key);
                     }}
                 >
-                    {row => row}
+                    {(row: string) => <span>{row}</span>}
                 </DropDown>
             );
         },
@@ -144,7 +144,7 @@ const SettingsPanelGroup = ({
                     min={item.min ?? 1}
                     step={item.step ?? 1}
                     max={item.max ?? 100}
-                    value={(item.value as unknown) as number}
+                    value={item.value as unknown as number}
                     onChange={val => onItemChange(item, val)}
                 />
             );

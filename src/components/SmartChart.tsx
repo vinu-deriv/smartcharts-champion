@@ -3,7 +3,10 @@ import { useStores, getContext, initContext } from 'src/store';
 import { TChartProps } from 'src/types';
 import Chart from './Chart';
 
-const SmartChart = React.forwardRef(({ children, ...props }: TChartProps, ref) => {
+const SmartChart = React.forwardRef<
+    { hasPredictionIndicators(): boolean; triggerPopup(cancelCallback: () => void): void },
+    TChartProps
+>(({ children, ...props }, ref) => {
     const is_context_intialized = React.useRef(false);
     if (!is_context_intialized.current) {
         initContext();

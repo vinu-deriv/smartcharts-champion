@@ -1,4 +1,3 @@
-import React from 'react';
 import classNames from 'classnames';
 import AnimatedPriceStore from 'src/store/AnimatedPriceStore';
 import ChartTitleStore from 'src/store/ChartTitleStore';

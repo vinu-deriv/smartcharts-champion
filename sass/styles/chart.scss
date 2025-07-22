@@ -8,6 +8,7 @@ $chart-red: #f95454;
 html,
 body {
     -ms-touch-action: none; /* This is necessary to allow the chart to grab windows touch events */ /* stylelint-disable-line plugin/no-unsupported-browser-features */
+    touch-action: none; /* Standard property for compatibility */ /* stylelint-disable-line plugin/no-unsupported-browser-features */
     margin: 0px; /*to deal with iFraming which sets 8px by default in some browsers*/
 }
 
@@ -36,7 +37,7 @@ body {
     height: 100%;
     position: absolute;
     top: 0px;
-    pointer-events: none;
+    pointer-events: none; /* stylelint-disable-line plugin/no-unsupported-browser-features */
 }
 /* Chart Block */
 

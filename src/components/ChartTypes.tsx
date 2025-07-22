@@ -1,5 +1,4 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStores } from 'src/store';
 import { ChartType, TIcon } from 'src/types';

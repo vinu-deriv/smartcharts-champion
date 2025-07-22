@@ -167,17 +167,8 @@ const TimePickerDropdown = React.memo(
     }
 );
 const TimePicker = (props: TTimerPickerProps) => {
-    const {
-        disableFocus,
-        onChange,
-        start_date,
-        is_nativepicker,
-        focus,
-        name,
-        is_align_right,
-        padding,
-        placeholder,
-    } = props;
+    const { disableFocus, onChange, start_date, is_nativepicker, focus, name, is_align_right, padding, placeholder } =
+        props;
     const [is_open, setIsOpen] = React.useState(false);
     const [value, setValue] = React.useState('00:00');
     const [minutes] = React.useState([...Array(12).keys()].map(a => `0${a * 5}`.slice(-2)));
@@ -186,8 +177,8 @@ const TimePicker = (props: TTimerPickerProps) => {
     const prev_focus = usePrevious(focus);
     const prev_is_open = usePrevious(is_open);
     const handleClickOutside = React.useCallback(
-        event => {
-            if (wrapper_ref.current && !wrapper_ref.current.contains(event.target)) {
+        (event: MouseEvent) => {
+            if (wrapper_ref.current && !wrapper_ref.current.contains(event.target as Node)) {
                 if (is_open) {
                     setIsOpen(false);
                     if (disableFocus) {
@@ -208,7 +199,7 @@ const TimePicker = (props: TTimerPickerProps) => {
         setIsOpen(!is_open);
     }, [is_open]);
     const handleChange = React.useCallback(
-        arg => {
+        (arg: any) => {
             // To handle nativepicker;
             const new_value = typeof arg === 'object' ? arg.target.value : arg;
             setValue(new_value);
