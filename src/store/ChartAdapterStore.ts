@@ -1,6 +1,6 @@
 import { action, makeObservable, observable, when, runInAction, computed } from 'mobx';
 import moment from 'moment';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash-es/debounce';
 import { TFlutterChart, TLoadHistoryParams, TQuote } from 'src/types';
 import { createChartElement, runChartApp } from 'src/flutter-chart';
 import Painter from 'src/flutter-chart/painter';

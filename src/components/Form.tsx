@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable react/sort-comp,react/no-multi-comp */
 import { ChangeEvent } from 'react';
-import debounce from 'lodash.debounce';
+import debounce from 'lodash-es/debounce';
 
 import classNames from 'classnames';
 import { ArrayElement, TIcon, TNumberPickerValue } from 'src/types';
