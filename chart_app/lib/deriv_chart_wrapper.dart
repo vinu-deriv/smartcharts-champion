@@ -6,7 +6,6 @@ import 'package:chart_app/src/chart_app.dart';
 import 'package:chart_app/src/helpers/marker_painter.dart';
 import 'package:chart_app/src/helpers/series.dart';
 import 'package:chart_app/src/interop/js_interop.dart';
-import 'package:chart_app/src/misc/crosshair_controller.dart';
 import 'package:chart_app/src/models/chart_config.dart';
 import 'package:chart_app/src/models/chart_feed.dart';
 import 'package:chart_app/src/models/drawing_tool.dart';
@@ -195,41 +194,6 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
     return null;
   }
 
-  void _onCrosshairHover(
-    Offset globalPosition,
-    Offset localPosition,
-    EpochToX epochToX,
-    QuoteToY quoteToY,
-    EpochFromX epochFromX,
-    QuoteFromY quoteFromY,
-    AddOnConfig? config,
-  ) {
-    final CrosshairController controller =
-        app.wrappedController.getCrosshairController();
-
-    int? index;
-
-    if (config != null) {
-      index = indicatorsModel.indicatorsRepo.items
-          .indexOf(config as IndicatorConfig);
-    }
-
-    // ignore: cascade_invocations
-    controller
-      ..getEpochFromX_ = epochFromX
-      ..getQuoteFromY_ = quoteFromY
-      ..getXFromEpoch_ = epochToX
-      ..getYFromQuote_ = quoteToY;
-
-    JsInterop.onCrosshairHover(
-      globalPosition.dx,
-      globalPosition.dy,
-      localPosition.dx,
-      localPosition.dy,
-      index,
-    );
-  }
-
   @override
   Widget build(BuildContext context) => MultiProvider(
         providers: <ChangeNotifierProvider<ChangeNotifier>>[
@@ -333,10 +297,12 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                       drawingTools: drawingToolModel.drawingTools,
                       indicatorsRepo: indicatorsModel.indicatorsRepo,
                       dataFitEnabled: configModel.startWithDataFitMode,
+                      useDrawingToolsV2: true,
                       showCrosshair: configModel.showCrosshair,
+                      crosshairVariant: configModel.isMobile
+                          ? CrosshairVariant.smallScreen
+                          : CrosshairVariant.largeScreen,
                       isLive: configModel.isLive,
-                      onCrosshairDisappeared: JsInterop.onCrosshairDisappeared,
-                      onCrosshairHover: _onCrosshairHover,
                       chartAxisConfig: ChartAxisConfig(
                         maxCurrentTickOffset:
                             _getMaxCurrentTickOffset(rightPadding),

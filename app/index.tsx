@@ -477,8 +477,6 @@ const App = () => {
             endEpoch={endEpoch}
             chartType={chartType}
             granularity={granularity}
-            crosshairState={isMobile ? 0 : null}
-            crosshairTooltipLeftAllow={660}
             onSettingsChange={saveSettings}
             isConnectionOpened={isConnectionOpened}
             networkStatus={networkStatus}

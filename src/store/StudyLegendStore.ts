@@ -276,7 +276,6 @@ export default class StudyLegendStore {
 
         this.activeItems.splice(index, 1);
         this.mainStore.bottomWidgetsContainer.updateChartHeight();
-        this.mainStore.crosshair.removeIndicatorToolTip();
         this.renderLegend();
         this.mainStore.state.saveLayout();
     }
@@ -385,7 +384,7 @@ export default class StudyLegendStore {
         this.addOrUpdateIndicator(item, index);
     }
 
-    highlightIndicator(hoverIndex: number | undefined | null, dx: number, dy: number) {
+    highlightIndicator(hoverIndex: number | undefined | null) {
         this.currentHoverIndex = hoverIndex;
 
         if (this.previousHoverIndex === this.currentHoverIndex) {
@@ -400,7 +399,6 @@ export default class StudyLegendStore {
             const item = clone(this.activeItems[hoverIndex]);
 
             if (item && item.config) {
-                this.mainStore.crosshair.renderIndicatorToolTip(`${item.name} ${item.bars || ''}`, dx, dy);
                 for (const key in item.config) {
                     if (key.includes('Style')) {
                         item.config[key].thickness = 2;
@@ -425,7 +423,6 @@ export default class StudyLegendStore {
 
     clearHoverItem(index: number) {
         const item = this.activeItems[index];
-        this.mainStore.crosshair.removeIndicatorToolTip();
         if (item) {
             this.setIndicator(item, index);
         }

@@ -1,17 +1,13 @@
+/* eslint-disable react/react-in-jsx-scope */
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { useStores } from 'src/store';
-import { TMainStore } from 'src/types';
 import CrosshairToggle from './CrosshairToggle';
 import '../../sass/components/_navigation-widget.scss';
 
 import { ScaleIcon, ZoominIcon, ZoomoutIcon } from './Icons';
 
-type TNavigationWidgetProps = {
-    onCrosshairChange?: TMainStore['crosshair']['onCrosshairChanged'];
-};
-
-const NavigationWidget = ({ onCrosshairChange }: TNavigationWidgetProps) => {
+const NavigationWidget = () => {
     const { chart, chartSize, navigationWidget, chartSetting, chartAdapter } = useStores();
     const { context, startWithDataFitMode } = chart;
     const { zoomIn, zoomOut } = chartSize;
@@ -38,7 +34,7 @@ const NavigationWidget = ({ onCrosshairChange }: TNavigationWidgetProps) => {
             </div>
             <div className='sc-navigation-widget__item sc-navigation-widget__item--zoom'>
                 <ZoominIcon onClick={zoomIn} />
-                <CrosshairToggle onChange={onCrosshairChange} />
+                <CrosshairToggle />
                 <ZoomoutIcon onClick={zoomOut} />
             </div>
         </div>

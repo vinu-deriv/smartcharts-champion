@@ -16,7 +16,6 @@ import BottomWidgetsContainer from './BottomWidgetsContainer';
 import ChartControls from './ChartControls';
 import ChartFooter from './ChartFooter';
 import ChartTitle from './ChartTitle';
-import Crosshair from './Crosshair';
 import HighestLowestMarker from './HighestLowestMarker';
 import IndicatorPredictionDialog from './IndicatorPredictionDialog';
 import Loader from './Loader';
@@ -30,10 +29,9 @@ const Chart = React.forwardRef<
     { hasPredictionIndicators(): boolean; triggerPopup(cancelCallback: () => void): void },
     TChartProps
 >((props, ref) => {
-    const { chart, drawTools, studies, chartSetting, chartType, state, loader, chartAdapter, crosshair, timeperiod } =
+    const { chart, drawTools, studies, chartSetting, chartType, state, loader, chartAdapter, timeperiod } =
         useStores();
     const { chartId, init, destroy, isChartAvailable, chartContainerHeight, containerWidth } = chart;
-    const { setCrosshairState } = crosshair;
     const { settingsDialog: studiesSettingsDialog, restoreStudies, activeItems } = studies;
     const { settingsDialog: drawToolsSettingsDialog } = drawTools;
     const { settingsDialog: chartTypeSettingsDialog, isCandle, isSpline } = chartType;
@@ -102,7 +100,6 @@ const Chart = React.forwardRef<
         enabledChartFooter = true,
         enabledNavigationWidget = true,
         toolbarWidget = () => null,
-        onCrosshairChange = () => null,
         historical,
         contracts_array = [],
     } = props;
@@ -112,8 +109,6 @@ const Chart = React.forwardRef<
     // if there are any markers, then increase the subholder z-index
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const ToolbarWidget = React.useCallback(toolbarWidget, [t.lang]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const memoizedOnCrosshairChange = React.useCallback(onCrosshairChange, [t.lang]);
 
     React.useEffect(() => {
         chartAdapter.onMount(chartContainerRef.current as HTMLDivElement);
@@ -125,11 +120,6 @@ const Chart = React.forwardRef<
     React.useEffect(() => {
         chartAdapter.updateContracts(contracts_array);
     }, [contracts_array]);
-
-    // to always show price info on mobile screen
-    if (isMobile && crosshair.state !== 2) {
-        setCrosshairState(2);
-    }
 
     return (
         <div
@@ -185,11 +175,9 @@ const Chart = React.forwardRef<
                                                 ? chartContainerHeight - 30
                                                 : chartContainerHeight,
                                     }}
-                                >
-                                    <Crosshair />
-                                </div>
+                                />
                                 {enabledNavigationWidget && (
-                                    <NavigationWidget onCrosshairChange={memoizedOnCrosshairChange} />
+                                    <NavigationWidget />
                                 )}
                                 {ToolbarWidget && <ToolbarWidget />}
                                 {!isChartAvailable && (

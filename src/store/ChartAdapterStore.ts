@@ -4,8 +4,6 @@ import debounce from 'lodash-es/debounce';
 import { TFlutterChart, TLoadHistoryParams, TQuote } from 'src/types';
 import { createChartElement, runChartApp } from 'src/flutter-chart';
 import Painter from 'src/flutter-chart/painter';
-import { safeParse } from 'src/utils';
-import { capitalize } from 'src/components/ui/utils';
 import MainStore from '.';
 
 export default class ChartAdapterStore {
@@ -28,19 +26,6 @@ export default class ChartAdapterStore {
     painter = new Painter();
     drawingColor = 0;
     isScaled = false;
-    crossHairValue?: {
-        x: number;
-        y: number;
-        xLocal: number;
-        yLocal: number;
-        bottomIndex: number | undefined;
-    } = {
-        x: 0,
-        y: 0,
-        xLocal: 0,
-        yLocal: 0,
-        bottomIndex: 0,
-    };
     touchValues: {
         deltaXTotal?: number;
         deltaYTotal?: number;
@@ -82,7 +67,6 @@ export default class ChartAdapterStore {
             toggleDataFitMode: action.bound,
             toggleXScrollBlock: action.bound,
             touchValues: observable,
-            onCrosshairMove: action.bound,
             isDataFitModeEnabled: observable,
             isChartLoaded: observable,
             epochBounds: observable.ref,
@@ -98,19 +82,10 @@ export default class ChartAdapterStore {
     }
 
     checkIndicatorHover = (
-        dx: number,
-        dy: number,
         dxLocal: number,
         dyLocal: number,
         bottomIndicatorIndex: number | undefined
     ) => {
-        // dxLocal and dyLocal are the local position value correponding to the bottom indicator/main chart
-        const epoch = this.flutterChart?.crosshair.getEpochFromX(dxLocal) || 0;
-        const quote = (this.flutterChart?.crosshair.getQuoteFromY(dyLocal) || 0).toFixed(
-            this.mainStore.crosshair.decimalPlaces
-        );
-
-        this.mainStore.crosshair.onMouseMove(dx, dy, epoch, quote);
         const getClosestEpoch = this.mainStore.chart.feed?.getClosestValidEpoch;
         const granularity = this.mainStore.chartAdapter.getGranularityInMs();
 
@@ -126,7 +101,7 @@ export default class ChartAdapterStore {
             return;
         }
 
-        this.mainStore.studies.highlightIndicator(hoverIndex, dx, dy);
+        this.mainStore.studies.highlightIndicator(hoverIndex);
     };
 
     debouncedIndicatorHover = debounce(this.checkIndicatorHover, 5);
@@ -138,37 +113,6 @@ export default class ChartAdapterStore {
             onVisibleAreaChanged: this.onVisibleAreaChanged,
             onQuoteAreaChanged: this.onQuoteAreaChanged,
             loadHistory: this.loadHistory,
-            onCrosshairDisappeared: () => {
-                this.mainStore.crosshair.updateVisibility(false);
-            },
-            onCrosshairHover: (dx, dy, dxLocal, dyLocal, bottomIndicatorIndex) => {
-                if (!this.isOverFlutterCharts) return;
-
-                this.onCrosshairMove(dx, dy, dxLocal, dyLocal, bottomIndicatorIndex);
-
-                if (this.drawingHoverIndex != null) {
-                    const drawingRepoItems = this.mainStore.chartAdapter.flutterChart?.drawingTool
-                        .getDrawingToolsRepoItems()
-                        .map(item => safeParse(item))
-                        .filter(item => item);
-
-                    if (!drawingRepoItems) {
-                        return;
-                    }
-
-                    const item = drawingRepoItems[this.drawingHoverIndex];
-
-                    if (item) {
-                        this.mainStore.crosshair.renderDrawingToolToolTip(
-                            capitalize(item.name.replace('dt_', '')) || '',
-                            dx,
-                            dy
-                        );
-                    }
-                }
-
-                this.debouncedIndicatorHover(dx, dy, dxLocal, dyLocal, bottomIndicatorIndex);
-            },
             indicators: {
                 onRemove: (index: number) => {
                     this.mainStore.studies.deleteStudy(index);
@@ -196,7 +140,6 @@ export default class ChartAdapterStore {
                 },
                 onMouseExit: () => {
                     this.drawingHoverIndex = null;
-                    this.mainStore.crosshair.removeDrawingToolToolTip();
                 },
             },
         };
@@ -355,29 +298,11 @@ export default class ChartAdapterStore {
     onDoubleClick = () => {
         if (this.drawingHoverIndex != null) {
             this.mainStore.drawTools.onSetting(this.drawingHoverIndex);
-            this.mainStore.crosshair.removeDrawingToolToolTip();
         } else if (this.mainStore.studies.currentHoverIndex != null) {
             this.mainStore.studies.editStudyByIndex(this.mainStore.studies.currentHoverIndex);
             this.mainStore.studies.clearHoverItem(this.mainStore.studies.currentHoverIndex);
         }
     };
-
-    onCrosshairMove(dx: number, dy: number, dxLocal: number, dyLocal: number, bottomIndicatorIndex?: number) {
-        // dxLocal and dyLocal are the local position value correponding to the bottom indicator/main chart
-        const epoch = this.flutterChart?.crosshair.getEpochFromX(dxLocal) || 0;
-        const quote = (this.flutterChart?.crosshair.getQuoteFromY(dyLocal) || 0).toFixed(
-            this.mainStore.crosshair.decimalPlaces
-        );
-
-        this.mainStore.crosshair.onMouseMove(dx, dy, epoch, quote);
-        this.crossHairValue = {
-            x: dx,
-            y: dy,
-            xLocal: dxLocal,
-            yLocal: dyLocal,
-            bottomIndex: bottomIndicatorIndex,
-        };
-    }
 
     onVisibleAreaChanged(leftEpoch: number, rightEpoch: number) {
         if (this.epochBounds.leftEpoch !== leftEpoch || this.epochBounds.rightEpoch !== rightEpoch) {
@@ -385,13 +310,6 @@ export default class ChartAdapterStore {
                 leftEpoch,
                 rightEpoch,
             };
-        }
-
-        if (this.crossHairValue) {
-            const { x, y, yLocal, xLocal, bottomIndex } = this.crossHairValue;
-            if (x !== 0 && y !== 0) {
-                this.onCrosshairMove(x, y, xLocal, yLocal, bottomIndex);
-            }
         }
     }
 

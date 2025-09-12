@@ -74,8 +74,6 @@ class ChartState {
     hasReachedEndOfData = false;
     prevChartType?: string;
     isChartScrollingToEpoch = false;
-    crosshairState?: number = 1;
-    crosshairTooltipLeftAllow: number | null = null;
     maxTick?: number;
     enableScroll: boolean | null = true;
     enableZoom: boolean | null = true;
@@ -135,8 +133,6 @@ class ChartState {
             hasReachedEndOfData: observable,
             prevChartType: observable,
             isChartScrollingToEpoch: observable,
-            crosshairState: observable,
-            crosshairTooltipLeftAllow: observable,
             maxTick: observable,
             enableScroll: observable,
             enableZoom: observable,
@@ -193,10 +189,8 @@ class ChartState {
         allowTickChartTypeOnly = false,
         startEpoch,
         symbol,
-        crosshairState,
         zoom,
         maxTick,
-        crosshairTooltipLeftAllow,
         yAxisMargin,
         enableScroll = null,
         enableZoom = null,
@@ -362,15 +356,6 @@ class ChartState {
             }
         }
 
-        if (crosshairState !== undefined && crosshairState !== null && crosshairState !== this.crosshairState) {
-            this.mainStore.crosshair.setCrosshairState(crosshairState);
-            this.crosshairState = crosshairState;
-        }
-
-        if (crosshairTooltipLeftAllow !== undefined && this.crosshairTooltipLeftAllow !== crosshairTooltipLeftAllow) {
-            this.crosshairTooltipLeftAllow = crosshairTooltipLeftAllow;
-        }
-
         if (zoom) {
             if (zoom === 1) {
                 this.mainStore.chartSize.zoomIn();
@@ -506,7 +491,6 @@ class ChartState {
         const layoutCompressedData = LZString.compress(
             JSON.stringify({
                 studyItems: layoutData.studyItems,
-                crosshair: layoutData.crosshair,
                 msPerPx: layoutData.msPerPx,
             })
         );
@@ -545,7 +529,6 @@ class ChartState {
         const id = this.mainStore.chart.chartId;
         const layoutCompressedData = LZString.compress(
             JSON.stringify({
-                crosshair: layoutData.crosshair,
                 studyItems: layoutData.studyItems,
                 msPerPx: layoutData.msPerPx,
             })
@@ -558,9 +541,6 @@ class ChartState {
         if (!this.clearChart || !this.isChartReady) return;
 
         this.mainStore.studies.deleteAllStudies();
-
-        // TODO: use constant
-        this.mainStore.crosshair.onCrosshairChanged(2);
     }
 
     debouncedStateChange = debounce((state: string, option: TStateChangeOption) => {

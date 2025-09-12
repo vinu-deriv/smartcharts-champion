@@ -42,10 +42,10 @@ export default class ToolbarWidgetStore {
     }
 
     onMouseEnter() {
-        this.crosshairStore.updateVisibility(false);
+        this.crosshairStore.setTemporaryDisabled(true);
     }
 
     onMouseLeave() {
-        this.crosshairStore.updateVisibility(true);
+        this.crosshairStore.setTemporaryDisabled(false);
     }
 }

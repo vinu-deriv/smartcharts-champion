@@ -22,13 +22,6 @@ class JsInterop {
   /// Called to load additional history
   external static void loadHistory(JsLoadHistoryReq request);
 
-  /// Called when candle or point is dismissed.
-  external static void onCrosshairDisappeared();
-
-  /// Called when the crosshair is moved.
-  external static void onCrosshairHover(double dx, double dy, double dxLocal,
-      double dyLocal, int? indicatorIndex);
-
   /// Indicator options
   external static JsIndicators? indicators;
 

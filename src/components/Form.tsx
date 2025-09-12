@@ -1,3 +1,4 @@
+/* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable max-classes-per-file */
 /* eslint-disable react/sort-comp,react/no-multi-comp */
 import { ChangeEvent } from 'react';

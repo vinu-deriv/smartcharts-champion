@@ -185,8 +185,7 @@ Props marked with `*` are **mandatory**:
 | shouldGetQuotes    | Determine whether an API call for fetching tick history is necessary for the new chart or not. Defaults to `true`                                                                                                                                                                                                                                                   |
 | allTicks                  | Provides all_ticks contract data for chart rendering when contract with duration = 'ticks' . Defaults to `undefined`                                                                                                                                                                                                                                              |
 | maxTick                   | Set the max number of first points/candles in the visible chart area. The value should be number greater than zero. Defaults to `undefined`                                                                                                                                                                                                                      |
-| crosshair                 | Set state of Crosshair Component. Allowed values are undefined, 0,1,2. Defaults to `undefined`                                                                                                                                                                                                                                                                   |
-| crosshairTooltipLeftAllow | Set max left position which chart allow to render left side tooltip of crosshair, if mouse position before this size, the crosshair tooltip move to right side of mouse, if set `null` then chart specify `315px` as default value. Defaults to `null`                                                                                                           |
+| crosshair                 | Control crosshair visibility state. Accepts numeric values (`undefined`, `0`, `1`, `2`) where `1` enables crosshair (default). The crosshair provides precise price and time information when hovering over the chart. Modern usage recommends using the `<CrosshairToggle />` component for user interaction instead of directly setting this prop. See [Crosshair Implementation Guide](docs/CROSSHAIR_MAINTAINERS_GUIDE.md) for architecture details and modern usage patterns.                                                                                                                                                                                                                                                   |
 | zoom                      | Zoom in and Zoom out the chart. the value should be `1` or `-1`. If the value is `1` the chart will be zoomed in, and if the value is `-1` it zoomed out.                                                                                                                                                                                                        |
 | yAxisMargin               | Set the margins of chart yAxis. It's an object that takes two parameters, `bottom` for margin bottom of chart, and `top` for the top margin of chart.                                                                                                                                                                                                            |
 | enableScroll              | Enable/disable scroll feature in chart. Scroll gets disable on chart scale `1:1` and enable whenever user zoom in/out. This property override that feature . Defaults to `true`                                                                                                                                                                                  |
@@ -547,7 +546,7 @@ Here are the following components you can import:
 - Top widgets:
   - `<ChartTitle enabled={true} onChange={(symbol) => {}} open_market={null} />`
 - Chart controls:
-  - `<CrosshairToggle enabled={true} />`
+  - `<CrosshairToggle />` - Interactive crosshair toggle component with internationalization support. Features reactive state management using MobX, dual-state logic (user preference + temporary disable), mobile-responsive tooltips, and proper UX patterns (icon shows current state, label shows available action). Integrates with global translation system using keys "Enable Crosshair" and "Disable Crosshair".
   - `<ChartTypes enabled={true} onChange={(chartType) => {}} />`
   - `<StudyLegend />`
   - `<DrawTools />`
@@ -605,6 +604,15 @@ See available components and their props in [Customising Components](#customisin
 
 ## How to contribute
 
+### Developer Documentation
+
+For component-specific maintenance and development guidelines, see the [`docs/`](docs/) directory:
+
+- [Crosshair Implementation - Maintainer's Guide](docs/CROSSHAIR_MAINTAINERS_GUIDE.md) - Comprehensive guide for maintaining and developing the crosshair functionality
+
+Future component guides will follow the same pattern and be added to the [`docs/`](docs/) directory.
+
+### Getting Started
 
 1. Create branch from the latest `master` branch
 

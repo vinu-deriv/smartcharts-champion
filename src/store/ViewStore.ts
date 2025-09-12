@@ -111,7 +111,6 @@ export default class ViewStore {
             granularity: this.mainStore.state.granularity,
             timeUnit: this.mainStore.state.timeperiodStore.timeUnit,
             studyItems: this.mainStore.studies.activeItems,
-            crosshair: this.mainStore.crosshair.state,
             drawTools: this.mainStore.drawTools.activeToolsGroup,
             msPerPx: this.mainStore.chartAdapter.msPerPx,
         };
@@ -162,14 +161,11 @@ export default class ViewStore {
         if (e.nativeEvent.is_item_removed) {
             return;
         }
-        this.mainStore.crosshair.updateVisibility(false);
+        this.mainStore.crosshair.setTemporaryDisabled(true);
         const { layout } = this.sortedItems[idx];
 
         onGranularity(layout.granularity);
         onChartType(layout.chartType);
-
-        // to not show tooltip while chart is loading
-        this.mainStore.crosshair.setCrosshairState(0);
         this.restoreLayout(clone(layout));
         logEvent(LogCategories.ChartControl, LogActions.Template, 'Load Template');
     }
@@ -203,10 +199,6 @@ export default class ViewStore {
         await when(() => this.mainStore.chartAdapter.isChartLoaded);
 
         this.mainStore.studies.restoreStudies(layout.studyItems || []);
-
-        if (typeof layout.crosshair === 'number') {
-            this.mainStore.crosshair.setLayoutCrosshair(layout.crosshair);
-        }
 
         finishImportLayout();
     }

@@ -1,4 +1,4 @@
-import { action, computed, observable, reaction, makeObservable } from 'mobx';
+import { action, computed, observable, makeObservable } from 'mobx';
 import MainStore from '.';
 import ChartStore from './ChartStore';
 
@@ -21,11 +21,9 @@ export default class NavigationWidgetStore {
             enableScale: computed,
             onMouseEnter: action.bound,
             onMouseLeave: action.bound,
-            onCrosshairChange: action.bound,
         });
 
         this.mainStore = mainStore;
-        reaction(() => this.crosshairStore.state, this.onCrosshairChange);
     }
 
     get enableScale() {
@@ -34,17 +32,11 @@ export default class NavigationWidgetStore {
 
     onMouseEnter() {
         this.mouse_in = true;
-        this.crosshairStore.updateVisibility(false);
+        this.crosshairStore.setTemporaryDisabled(true);
     }
 
     onMouseLeave() {
         this.mouse_in = false;
-        this.crosshairStore.updateVisibility(true);
-    }
-
-    onCrosshairChange() {
-        if (this.crosshairStore.state === 2 && this.mouse_in) {
-            this.crosshairStore.updateVisibility(false);
-        }
+        this.crosshairStore.setTemporaryDisabled(false);
     }
 }

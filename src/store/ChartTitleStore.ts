@@ -174,8 +174,8 @@ export default class ChartTitleStore {
         }
         this.isVisible = isVisible as boolean;
     }
-    onMouseEnter = () => this.crosshairStore.updateVisibility(false);
-    onMouseLeave = () => this.crosshairStore.updateVisibility(true);
+    onMouseEnter = () => this.crosshairStore.setTemporaryDisabled(true);
+    onMouseLeave = () => this.crosshairStore.setTemporaryDisabled(false);
     hidePrice() {
         this.isVisible = false;
         this.enableShowPrice = false;

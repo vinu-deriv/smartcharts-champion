@@ -391,12 +391,6 @@ $themes: (
         DownloadText: $color-black-1,
         DownloadActiveBg: $color-grey-4,
         LoadingBg: $color-green,
-        CrosshairBg: $color-grey-5,
-        CrosshairText: $color-black-1,
-        CrosshairBorder: $color-grey-5,
-        CrosshairAxis: $color-grey-5,
-        CrosshairLabelBg: $color-grey-5,
-        CrosshairLabelText: $color-black-1,
         StarIconFav: $COLOR_ORANGE,
         LastdigitsBarBg: $COLOR_LIGHT_GRAY_1,
         LastdigitsMaxBarBg: $COLOR_GREEN_2,
@@ -712,12 +706,6 @@ $themes: (
         DownloadText: $color-grey,
         DownloadActiveBg: $color-black-5,
         LoadingBg: $color-green,
-        CrosshairBg: $color-black-8,
-        CrosshairText: $color-white,
-        CrosshairBorder: $color-black-8,
-        CrosshairAxis: $color-black-8,
-        CrosshairLabelBg: $color-black-8,
-        CrosshairLabelText: $color-white,
         StarIconFav: $COLOR_ORANGE,
         LastdigitsBarBg: $COLOR_DARK_GRAY_3,
         LastdigitsMaxBarBg: $COLOR_GREEN_1,
@@ -841,8 +829,4 @@ $themes: (
     chart_closed_current_hr: map-get(map-get($themes, 'light'), 'ChartCloseCurrentHRBg');
     light_chart_bg: map-get(map-get($themes, 'light'), 'ChartBg');
     dark_chart_bg: map-get(map-get($themes, 'dark'), 'ChartBg');
-    light_float_labels_bg: map-get(map-get($themes, 'light'), 'CrosshairLabelBg');
-    dark_float_labels_bg: map-get(map-get($themes, 'dark'), 'CrosshairLabelBg');
-    light_float_labels_text: map-get(map-get($themes, 'light'), 'CrosshairLabelText');
-    dark_float_labels_text: map-get(map-get($themes, 'dark'), 'CrosshairLabelText');
 }
