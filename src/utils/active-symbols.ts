@@ -43,87 +43,180 @@ export const processSymbols = (symbols: TActiveSymbols): TProcessedSymbols => {
             decimal_places: s.pip.toString().length - 2,
         });
     }
-
     return processedSymbols;
 };
 
-export const categorizeActiveSymbols = (activeSymbols: TProcessedSymbols): TCategorizedSymbols => {
-    const categorizedSymbols: TCategorizedSymbols = [];
-    if (!activeSymbols.length) return categorizedSymbols;
+// [AI]
+/**
+ * Creates a symbol data item for categorization
+ */
+const createSymbolDataItem = (symbol: TProcessedSymbolItem): TSubCategoryDataItem => ({
+    enabled: true,
+    itemId: symbol.symbol,
+    display: symbol.name,
+    dataObject: symbol,
+});
+
+/**
+ * Creates a new subcategory structure
+ */
+const createSubcategory = (symbol: TProcessedSymbolItem): TSubCategory => ({
+    subcategoryName: symbol.submarket_display_name,
+    data: [],
+});
+
+/**
+ * Creates a new category structure
+ */
+const createCategory = (symbol: TProcessedSymbolItem): TCategorizedSymbolItem<TSubCategoryDataItem> => ({
+    categoryName: symbol.market_display_name,
+    categoryId: symbol.market,
+    hasSubcategory: true,
+    hasSubgroup: !!(symbol.subgroup && symbol.subgroup !== 'none'),
+    data: [],
+    subgroups: [],
+});
+
+/**
+ * Creates a new subgroup structure
+ */
+const createSubgroup = (symbol: TProcessedSymbolItem): TCategorizedSymbolItem => ({
+    data: [],
+    categoryName: symbol.subgroup_display_name,
+    categoryId: symbol.subgroup,
+    hasSubcategory: true,
+    hasSubgroup: false,
+    subgroups: [],
+});
+
+/**
+ * Finds or creates a category in the categorized symbols array
+ */
+const findOrCreateCategory = (
+    categorizedSymbols: TCategorizedSymbols,
+    symbol: TProcessedSymbolItem
+): TCategorizedSymbolItem<TSubCategoryDataItem> => {
+    let category = categorizedSymbols.find(cat => cat.categoryId === symbol.market);
     
-    const first = activeSymbols[0];
-    const getSubcategory = (d: TProcessedSymbolItem): TSubCategory => ({
-        subcategoryName: d.submarket_display_name,
-        data: [],
-    });
-    const getCategory = (d: TProcessedSymbolItem): TCategorizedSymbolItem<TSubCategoryDataItem> => ({
-        categoryName: d.market_display_name,
-        categoryId: d.market,
-        hasSubcategory: true,
-        hasSubgroup: !!(d.subgroup && d.subgroup !== 'none'),
-        data: [],
-        subgroups: [],
-    });
-    let subcategory = getSubcategory(first);
-    let category = getCategory(first);
-    for (const symbol of activeSymbols) {
-        if (
-            category.categoryName !== symbol.market_display_name &&
-            category.categoryName !== symbol.subgroup_display_name
-        ) {
-            category.data.push(subcategory as unknown as TSubCategoryDataItem);
-            categorizedSymbols.push(category);
-            subcategory = getSubcategory(symbol);
-            category = getCategory(symbol);
-        }
-
-        if (category.hasSubgroup) {
-            if (!category.subgroups?.some((el: TCategorizedSymbolItem) => el.categoryId === symbol.subgroup)) {
-                category.subgroups?.push({
-                    data: [],
-                    categoryName: symbol.subgroup_display_name,
-                    categoryId: symbol.subgroup,
-                    hasSubcategory: true,
-                    hasSubgroup: false,
-                    subgroups: [],
-                });
-            }
-            // should push a subcategory instead of symbol
-            if (
-                !category.subgroups
-                    ?.find((el: TCategorizedSymbolItem) => el.categoryId === symbol.subgroup)
-                    ?.data.find((el: TSubCategory) => el.subcategoryName === symbol.submarket_display_name)
-            ) {
-                subcategory = getSubcategory(symbol);
-                category.subgroups
-                    ?.find((el: TCategorizedSymbolItem) => el.categoryId === symbol.subgroup)
-                    ?.data.push(subcategory);
-                subcategory = getSubcategory(symbol);
-            }
-            category.subgroups
-                ?.find((el: TCategorizedSymbolItem) => el.categoryId === symbol.subgroup)
-                ?.data.find((el: TSubCategory) => el.subcategoryName === symbol.submarket_display_name)
-                ?.data.push({
-                    enabled: true,
-                    itemId: symbol.symbol,
-                    display: symbol.name,
-                    dataObject: symbol,
-                });
-        }
-        if (subcategory.subcategoryName !== symbol.submarket_display_name) {
-            category.data.push(subcategory as unknown as TSubCategoryDataItem);
-            subcategory = getSubcategory(symbol);
-        }
-        subcategory.data.push({
-            enabled: true,
-            itemId: symbol.symbol,
-            display: symbol.name,
-            dataObject: symbol,
-        });
+    if (!category) {
+        category = createCategory(symbol);
+        categorizedSymbols.push(category);
     }
+    
+    return category;
+};
 
-    category.data.push(subcategory as unknown as TSubCategoryDataItem);
-    categorizedSymbols.push(category);
+/**
+ * Finds or creates a subcategory within a category
+ */
+const findOrCreateSubcategory = (
+    category: TCategorizedSymbolItem<TSubCategoryDataItem>,
+    symbol: TProcessedSymbolItem,
+    subcategoryMap: Map<string, TSubCategory>
+): TSubCategory => {
+    let subcategory = subcategoryMap.get(symbol.submarket_display_name);
+    
+    if (!subcategory) {
+        subcategory = createSubcategory(symbol);
+        subcategoryMap.set(symbol.submarket_display_name, subcategory);
+        // Type assertion needed due to the complex generic type structure
+        category.data.push(subcategory as unknown as TSubCategoryDataItem);
+    }
+    
+    return subcategory;
+};
+
+/**
+ * Finds or creates a subgroup within a category
+ */
+const findOrCreateSubgroup = (
+    category: TCategorizedSymbolItem<TSubCategoryDataItem>,
+    symbol: TProcessedSymbolItem
+): TCategorizedSymbolItem => {
+    let subgroup = category.subgroups?.find(sg => sg.categoryId === symbol.subgroup);
+    
+    if (!subgroup) {
+        subgroup = createSubgroup(symbol);
+        category.subgroups?.push(subgroup);
+    }
+    
+    return subgroup;
+};
+
+/**
+ * Finds or creates a subcategory within a subgroup
+ */
+const findOrCreateSubgroupSubcategory = (
+    subgroup: TCategorizedSymbolItem,
+    symbol: TProcessedSymbolItem
+): TSubCategory => {
+    let subcategory = subgroup.data.find(
+        (item: TSubCategory) => item.subcategoryName === symbol.submarket_display_name
+    ) as TSubCategory;
+    
+    if (!subcategory) {
+        subcategory = createSubcategory(symbol);
+        subgroup.data.push(subcategory);
+    }
+    
+    return subcategory;
+};
+
+/**
+ * Processes subgroup logic for a symbol
+ */
+const processSubgroup = (
+    category: TCategorizedSymbolItem<TSubCategoryDataItem>,
+    symbol: TProcessedSymbolItem
+): void => {
+    if (!category.hasSubgroup) return;
+    
+    const subgroup = findOrCreateSubgroup(category, symbol);
+    const subgroupSubcategory = findOrCreateSubgroupSubcategory(subgroup, symbol);
+    
+    // Add symbol to subgroup subcategory
+    subgroupSubcategory.data.push(createSymbolDataItem(symbol));
+};
+
+/**
+ * Categorizes active symbols into a hierarchical structure
+ * 
+ * This function organizes symbols by:
+ * 1. Market (main category)
+ * 2. Submarket (subcategory)
+ * 3. Subgroup (optional nested grouping)
+ * 
+ * It ensures no duplicate categories are created by checking existing
+ * categories before creating new ones.
+ */
+export const categorizeActiveSymbols = (activeSymbols: TProcessedSymbols): TCategorizedSymbols => {
+    if (!activeSymbols.length) return [];
+    
+    const categorizedSymbols: TCategorizedSymbols = [];
+    // Track subcategories for each category to avoid duplicates
+    const categorySubcategories = new Map<string, Map<string, TSubCategory>>();
+
+    for (const symbol of activeSymbols) {
+        // Step 1: Find or create the main category
+        const category = findOrCreateCategory(categorizedSymbols, symbol);
+        
+        // Step 2: Initialize subcategory tracking for new categories
+        if (!categorySubcategories.has(symbol.market)) {
+            categorySubcategories.set(symbol.market, new Map());
+        }
+        
+        const subcategoryMap = categorySubcategories.get(symbol.market)!;
+        
+        // Step 3: Find or create the subcategory
+        const subcategory = findOrCreateSubcategory(category, symbol, subcategoryMap);
+        
+        // Step 4: Process subgroup logic if applicable
+        processSubgroup(category, symbol);
+        
+        // Step 5: Add symbol to the main subcategory
+        subcategory.data.push(createSymbolDataItem(symbol));
+    }
 
     return categorizedSymbols;
 };
+// [/AI]
