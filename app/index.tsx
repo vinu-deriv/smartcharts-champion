@@ -461,6 +461,7 @@ const App = () => {
 
     return (
         <SmartChart
+            drawingToolFloatingMenuPosition={isMobile ? { x: 100, y: 100 } : { x: 200, y: 200 }}
             ref={ref}
             id={chartId}
             chartStatusListener={(isChartReady: boolean) => getIsChartReady(isChartReady)}

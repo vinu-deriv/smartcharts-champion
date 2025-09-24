@@ -226,12 +226,19 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                         : Color.fromRGBO(255, 255, 255,
                             configModel.isSymbolClosed ? 0.32 : 1);
 
-                    final Duration? animationDuration = configModel.isSmoothChartEnabled 
-                        ? null  // Uses flutter-chart default 300ms for smooth animations
-                        : _getAnimationDuration(isTickGranularity: isTickGranularity);
+                    final Duration? animationDuration = configModel
+                            .isSmoothChartEnabled
+                        ? null // Uses flutter-chart default 300ms for smooth animations
+                        : _getAnimationDuration(
+                            isTickGranularity: isTickGranularity);
 
                     final int? rightPadding = _getRightPadding(
                         isTickGranularity, granularity, constraints.maxWidth);
+
+                    drawingToolModel.updateInteractiveLayerBehaviour(
+                        configModel.isMobile
+                            ? InteractiveLayerMobileBehaviour()
+                            : InteractiveLayerDesktopBehaviour());
 
                     return DerivChart(
                       activeSymbol: configModel.symbol,
@@ -298,16 +305,17 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                       indicatorsRepo: indicatorsModel.indicatorsRepo,
                       dataFitEnabled: configModel.startWithDataFitMode,
                       useDrawingToolsV2: true,
+                      interactiveLayerBehaviour:
+                          drawingToolModel.interactiveLayerBehaviour,
                       showCrosshair: configModel.showCrosshair,
                       crosshairVariant: configModel.isMobile
                           ? CrosshairVariant.smallScreen
                           : CrosshairVariant.largeScreen,
                       isLive: configModel.isLive,
                       chartAxisConfig: ChartAxisConfig(
-                        maxCurrentTickOffset:
-                            _getMaxCurrentTickOffset(rightPadding),
-                            smoothScrolling: configModel.isSmoothChartEnabled
-                      ),
+                          maxCurrentTickOffset:
+                              _getMaxCurrentTickOffset(rightPadding),
+                          smoothScrolling: configModel.isSmoothChartEnabled),
                       msPerPx: configModel.startWithDataFitMode
                           ? null
                           : configModel.msPerPx,

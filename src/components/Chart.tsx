@@ -16,6 +16,8 @@ import BottomWidgetsContainer from './BottomWidgetsContainer';
 import ChartControls from './ChartControls';
 import ChartFooter from './ChartFooter';
 import ChartTitle from './ChartTitle';
+import DrawingConfirmationToast from './DrawingConfirmationToast';
+import DeletionSnackbar from './DeletionSnackbar';
 import HighestLowestMarker from './HighestLowestMarker';
 import IndicatorPredictionDialog from './IndicatorPredictionDialog';
 import Loader from './Loader';
@@ -203,6 +205,8 @@ const Chart = React.forwardRef<
                 <SettingsDialog store={chartTypeSettingsDialog} />
                 <SettingsDialog store={studiesSettingsDialog} />
                 <IndicatorPredictionDialog />
+                <DrawingConfirmationToast />
+                <DeletionSnackbar />
                 <div id='smartcharts_modal' className='ciq-modal' />
             </div>
         </div>

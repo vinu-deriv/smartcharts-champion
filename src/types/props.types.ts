@@ -9,7 +9,7 @@ import {
     TGranularity,
 } from 'src/types/api-types';
 
-import { TActiveDrawingToolItem, TDrawingCreatedConfig } from 'src/store/DrawToolsStore';
+import { TActiveDrawingToolItem } from 'src/store/DrawToolsStore';
 import { HtmlHTMLAttributes } from 'react';
 import { BinaryAPI } from 'src/binaryapi';
 import { ChartTypes } from 'src/Constant';
@@ -269,6 +269,7 @@ export type TChartProps = {
     isLive?: boolean;
     startWithDataFitMode?: boolean;
     leftMargin?: number;
+    drawingToolFloatingMenuPosition?: TFloatingMenuPositionOffset;
 };
 
 export type TQuote = {
@@ -447,14 +448,14 @@ export type TFlutterChart = {
         clearIndicators: () => void;
     };
     drawingTool: {
-        addOrUpdateDrawing: (config: string, index?: number) => void;
+        updateFloatingMenuPosition: (x: number, y: number) => void;
+        startAddingNewTool: (config: string, index?: number) => void;
+        cancelAddingNewTool: () => void;
         removeDrawingTool: (index: number) => void;
         clearDrawingTool: () => void;
         // eslint-disable-next-line @typescript-eslint/ban-types
         getDrawingToolsRepoItems: () => string[];
-        getTypeOfSelectedDrawingTool: (config: TDrawingCreatedConfig) => string;
         clearDrawingToolSelect: () => void;
-        editDrawing: (config: string, index: number) => void;
     };
 };
 
@@ -470,11 +471,10 @@ export type JSInterop = {
         onSwap: (index1: number, index2: number) => void;
     };
     drawingTool: {
-        onAdd: () => void;
         onUpdate: (index: number, config: TDrawingToolConfig) => void;
         onLoad: (drawings: []) => void;
-        onMouseEnter: (index: number) => void;
-        onMouseExit: (index: number) => void;
+        onRemove: (deletedToolName: string) => void;
+        onStateChanged: (currentStep: number, totalSteps: number) => void;
     };
 };
 
@@ -590,3 +590,8 @@ export type TDefaultIndicatorConfig = {
 export type TDefaultIndicatorConfigFn = () => TDefaultIndicatorConfig;
 
 export type TDefaultIndicatorConfigMap = Record<string, TDefaultIndicatorConfigFn>;
+
+export type TFloatingMenuPositionOffset = {
+    x: number;
+    y: number;
+};

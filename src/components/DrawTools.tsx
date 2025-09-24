@@ -6,7 +6,7 @@ import { useStores } from 'src/store';
 import DrawToolsStore from 'src/store/DrawToolsStore';
 import { ArrayElement, TIcon, TMainStore } from 'src/types';
 import '../../sass/components/_draw_tools.scss';
-import { ActiveIcon, DeleteIcon, DrawToolIcon, EmptyStateIcon, SettingIcon } from './Icons';
+import { ActiveIcon, DeleteIcon, DrawToolIcon, EmptyStateIcon } from './Icons';
 import Menu from './Menu';
 import NotificationBadge from './NotificationBadge';
 import Scroll from './Scroll';
@@ -19,7 +19,6 @@ type TActivePanelViewProps = {
 
 type TActiveDrawToolsListProps = {
     activeDrawToolsGroup: TMainStore['drawTools']['activeToolsGroup'];
-    onSetting: TMainStore['drawTools']['onSetting'];
     onDelete: TMainStore['drawTools']['onDeleted'];
 };
 
@@ -36,19 +35,17 @@ type DrawToolsProps = {
 
 type TActiveDrawToolsListGroupProps = {
     group: ArrayElement<TMainStore['drawTools']['activeToolsGroup']>;
-    onSetting: TMainStore['drawTools']['onSetting'];
     onDelete: TMainStore['drawTools']['onDeleted'];
 };
 
 type TActiveDrawToolsListItemProps = {
     item: ArrayElement<ArrayElement<TMainStore['drawTools']['activeToolsGroup']>['items']>;
-    onSetting: TMainStore['drawTools']['onSetting'];
     onDelete: TMainStore['drawTools']['onDeleted'];
 };
 
 type TDrawToolsListProps = {
     items: ReturnType<DrawToolsStore['getDrawToolsItems']>;
-    onClick: DrawToolsStore['selectTool'];
+    onClick: DrawToolsStore['startAddingNewTool'];
 };
 
 const ActivePanelView = ({ enabled, children }: TActivePanelViewProps) =>
@@ -58,7 +55,7 @@ const ActivePanelView = ({ enabled, children }: TActivePanelViewProps) =>
             <p>{t.translate('You have no active drawings yet.')}</p>
         </div>
     ) : (
-        <React.Fragment>{children}</React.Fragment>
+        <>{children}</>
     );
 
 const Info = ({ Icon, text, num, bars }: InfoProps) => (
@@ -85,34 +82,35 @@ const DrawToolsList = ({ items, onClick }: TDrawToolsListProps) => (
     </div>
 );
 
-const ActiveDrawToolsListItem = ({ item, onSetting, onDelete }: TActiveDrawToolsListItemProps) => {    
+const ActiveDrawToolsListItem = ({ item, onDelete }: TActiveDrawToolsListItemProps) => {
     return (
         <div className='sc-dtools__list__item'>
             <Info Icon={item.icon} text={item.text} bars={item.bars} num={item.num} />
             <div className='actions'>
-                <SettingIcon onClick={() => onSetting(item.index)} />
                 <DeleteIcon onClick={() => onDelete(item.index)} />
             </div>
         </div>
     );
 };
 
-const ActiveDrawToolsListGroup = ({ group, onSetting, onDelete }: TActiveDrawToolsListGroupProps) => (
+const ActiveDrawToolsListGroup = ({ group, onDelete }: TActiveDrawToolsListGroupProps) => (
     <div className='sc-dtools__category'>
         <div className='sc-dtools__category__head'>{t.translate(capitalize(group.id))}</div>
         <div className='sc-dtools__category__body'>
             <div className='sc-dtools__list'>
-                {group.items.map((item) => (
-                    <ActiveDrawToolsListItem key={item.index} item={{ ...item }} onSetting={onSetting} onDelete={onDelete} />
+                {group.items.map(item => (
+                    <ActiveDrawToolsListItem
+                        key={item.index}
+                        item={{ ...item }}
+                        onDelete={onDelete}
+                    />
                 ))}
             </div>
         </div>
     </div>
 );
 
-const ActiveDrawToolsList = ({ activeDrawToolsGroup, onSetting, onDelete }: TActiveDrawToolsListProps) => {
-
-    
+const ActiveDrawToolsList = ({ activeDrawToolsGroup, onDelete }: TActiveDrawToolsListProps) => {
     const sortedActiveDrawToolsGroup = activeDrawToolsGroup.sort((a, b) => {
         if (a.items.length <= 1 && b.items.length <= 1) return 0;
         if (a.items.length <= 1) return -1;
@@ -122,17 +120,16 @@ const ActiveDrawToolsList = ({ activeDrawToolsGroup, onSetting, onDelete }: TAct
 
     return (
         <Scroll autoHide height={320}>
-            {sortedActiveDrawToolsGroup.map((group) =>
+            {sortedActiveDrawToolsGroup.map(group =>
                 group.items.length > 1 ? (
-                    <ActiveDrawToolsListGroup
-                        group={group}
-                        key={group.id}
-                        onSetting={onSetting}
-                        onDelete={onDelete}
-                    />
+                    <ActiveDrawToolsListGroup group={group} key={group.id} onDelete={onDelete} />
                 ) : (
-                    group.items.map((item) => (
-                        <ActiveDrawToolsListItem key={item.index} item={item} onSetting={onSetting} onDelete={onDelete} />
+                    group.items.map(item => (
+                        <ActiveDrawToolsListItem
+                            key={item.index}
+                            item={item}
+                            onDelete={onDelete}
+                        />
                     ))
                 )
             )}
@@ -145,12 +142,11 @@ const DrawTools = ({ portalNodeId }: DrawToolsProps) => {
 
     const {
         clearAll,
-        selectTool,
+        startAddingNewTool,
         getDrawToolsItems,
         activeToolsNo: activeDrawToolsItemsNo,
         activeToolsGroup: activeDrawToolsGroup,
         onDeleted: onDelete,
-        onSetting,
         updatePortalNode,
         menuStore,
     } = drawTools;
@@ -205,7 +201,6 @@ const DrawTools = ({ portalNodeId }: DrawToolsProps) => {
                                 <div className='sc-dtools__panel__content sc-dtools__panel__content--active'>
                                     <ActiveDrawToolsList
                                         activeDrawToolsGroup={activeDrawToolsGroup}
-                                        onSetting={onSetting}
                                         onDelete={onDelete}
                                     />
                                 </div>
@@ -215,7 +210,7 @@ const DrawTools = ({ portalNodeId }: DrawToolsProps) => {
                     <TabPanel>
                         <div className='sc-dtools__panel'>
                             <div className='sc-dtools__panel__content'>
-                                <DrawToolsList items={drawToolsItems} onClick={selectTool} />
+                                <DrawToolsList items={drawToolsItems} onClick={startAddingNewTool} />
                             </div>
                         </div>
                     </TabPanel>

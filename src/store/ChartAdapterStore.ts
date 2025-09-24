@@ -20,7 +20,6 @@ export default class ChartAdapterStore {
     };
     isFeedLoaded = false;
     msPerPx?: number;
-    drawingHoverIndex: number | undefined | null = null;
     isDataFitModeEnabled = false;
     isXScrollBlocked = false;
     painter = new Painter();
@@ -81,11 +80,7 @@ export default class ChartAdapterStore {
         this.initFlutterCharts();
     }
 
-    checkIndicatorHover = (
-        dxLocal: number,
-        dyLocal: number,
-        bottomIndicatorIndex: number | undefined
-    ) => {
+    checkIndicatorHover = (dxLocal: number, dyLocal: number, bottomIndicatorIndex: number | undefined) => {
         const getClosestEpoch = this.mainStore.chart.feed?.getClosestValidEpoch;
         const granularity = this.mainStore.chartAdapter.getGranularityInMs();
 
@@ -126,20 +121,17 @@ export default class ChartAdapterStore {
                 },
             },
             drawingTool: {
-                onAdd: () => {
-                    this.mainStore.drawTools.onCreation();
-                },
                 onUpdate: () => {
                     this.mainStore.drawTools.onUpdate();
                 },
                 onLoad: (items: []) => {
                     this.mainStore.drawTools.onLoad(items);
                 },
-                onMouseEnter: (index: number) => {
-                    this.drawingHoverIndex = index;
+                onRemove: (deletedToolName: string) => {
+                    this.mainStore.drawTools.showDeletionSnackbarForDeletedTool(deletedToolName);
                 },
-                onMouseExit: () => {
-                    this.drawingHoverIndex = null;
+                onStateChanged: (currentStep: number, totalSteps: number) => {
+                    this.mainStore.drawTools.updateAddingState(currentStep, totalSteps);
                 },
             },
         };
@@ -296,9 +288,7 @@ export default class ChartAdapterStore {
     };
 
     onDoubleClick = () => {
-        if (this.drawingHoverIndex != null) {
-            this.mainStore.drawTools.onSetting(this.drawingHoverIndex);
-        } else if (this.mainStore.studies.currentHoverIndex != null) {
+        if (this.mainStore.studies.currentHoverIndex != null) {
             this.mainStore.studies.editStudyByIndex(this.mainStore.studies.currentHoverIndex);
             this.mainStore.studies.clearHoverItem(this.mainStore.studies.currentHoverIndex);
         }

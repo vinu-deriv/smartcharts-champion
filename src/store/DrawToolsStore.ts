@@ -1,11 +1,17 @@
 import { action, computed, observable, when, makeObservable } from 'mobx';
 import Context from 'src/components/ui/Context';
-import { TDrawingToolConfig, TIcon, TSettingsParameter } from 'src/types';
+import {
+    TDrawingToolConfig,
+    TIcon,
+    TSettingsParameter,
+    TAddingStateInfo,
+    TFloatingMenuPositionOffset,
+} from 'src/types';
 import set from 'lodash-es/set';
 import { capitalize, hexToInt, intToHexColor } from 'src/components/ui/utils';
 import MainStore from '.';
-import { defaultdrawToolsConfigs, getDefaultDrawingConfig, getDrawTools } from '../Constant';
-import { clone, formatCamelCase, isLiteralObject, safeParse, transformStudiesforTheme } from '../utils';
+import { getDefaultDrawingConfig, getDrawTools } from '../Constant';
+import { clone, isLiteralObject, safeParse, transformStudiesforTheme } from '../utils';
 import { LogActions, LogCategories, logEvent } from '../utils/ga';
 import MenuStore from './MenuStore';
 import SettingsDialogStore from './SettingsDialogStore';
@@ -83,24 +89,43 @@ export default class DrawToolsStore {
     activeToolsGroup: TActiveDrawingToolItem[] = [];
     portalNodeIdChanged?: string;
     seletedDrawToolConfig: TActiveDrawingItem | null = null;
+    selectedToolId: string | null = null;
+    showConfirmationToast = false;
+    confirmationMessage = '';
+    showDeletionSnackbar = false;
+    deletedToolName = '';
+    addingStateInfo: TAddingStateInfo = { currentStep: 0, totalSteps: 0, isFinished: true };
+    floatingMenuPosition?: TFloatingMenuPositionOffset;
 
     constructor(mainStore: MainStore) {
         makeObservable(this, {
             activeToolsGroup: observable,
             portalNodeIdChanged: observable,
+            selectedToolId: observable,
+            showConfirmationToast: observable,
+            confirmationMessage: observable,
+            showDeletionSnackbar: observable,
+            deletedToolName: observable,
+            addingStateInfo: observable,
+            floatingMenuPosition: observable,
             activeToolsNo: computed,
             destructor: action.bound,
             drawingFinished: action.bound,
             clearAll: action.bound,
             updateActiveToolsGroup: action.bound,
-            showDrawToolDialog: action.bound,
-            selectTool: action.bound,
-            onChanged: action.bound,
             onDeleted: action.bound,
-            onSetting: action.bound,
             updatePortalNode: action.bound,
-            onCreation: action.bound,
             onLoad: action.bound,
+            hideDrawingConfirmation: action.bound,
+            hideDeletionSnackbar: action.bound,
+            showDeletionSnackbarForDeletedTool: action.bound,
+            cancelDrawingTool: action.bound,
+            updateAddingState: action.bound,
+            resetAddingState: action.bound,
+            updateProps: action.bound,
+            updateFloatingMenuPosition: action.bound,
+            setSelectedTool: action.bound,
+            clearSelectedTool: action.bound,
         });
 
         this.mainStore = mainStore;
@@ -115,7 +140,9 @@ export default class DrawToolsStore {
                     this.onDeleted(index);
                 }
             },
-            onChanged: (items: TDrawingEditParameter[]) => this.onChanged(items),
+            onChanged: () => {
+                /* No-op: Drawing tool settings are not editable in this implementation */
+            },
         });
         when(() => !!this.context, this.onContextReady);
     }
@@ -137,10 +164,7 @@ export default class DrawToolsStore {
         return this.mainStore.chartAdapter.flutterChart?.drawingTool
             .getDrawingToolsRepoItems()
             .map(item => safeParse(item))
-            .filter(item => item)
-            .filter(item => {
-                return !(item.drawingData.isDrawingFinished === false);
-            });
+            .filter(item => item);
     };
 
     onContextReady = () => {
@@ -173,7 +197,6 @@ export default class DrawToolsStore {
         this.activeToolsGroup.forEach(item =>
             item.items.forEach(data => {
                 transformStudiesforTheme(data.parameters, this.mainStore.chartSetting.theme);
-                this.onChanged(data.parameters, data.index);
             })
         );
     }
@@ -211,28 +234,10 @@ export default class DrawToolsStore {
         });
     }
 
-    // Function that show the setting dialog for drawing tool
-    showDrawToolDialog(drawing: TActiveDrawingItem) {
-        logEvent(LogCategories.ChartControl, LogActions.DrawTools, `Edit ${drawing.name}`);
-        if (drawing) {
-            let title = formatCamelCase(drawing.name || '');
-
-            const parameters = defaultdrawToolsConfigs[drawing.id]().parameters;
-            parameters.map(p => (p.value = clone(p.defaultValue)));
-
-            title = `${drawing.title} ${drawing.num || ''}`;
-            this.settingsDialog.title = title;
-            this.settingsDialog.dialogPortalNodeId = this.portalNodeIdChanged;
-            this.settingsDialog.items = drawing.parameters;
-            this.settingsDialog.formTitle = t.translate('Result');
-            this.settingsDialog.id = drawing.config.configId;
-            this.settingsDialog.formClassname = 'form--drawing-tool';
-            this.settingsDialog.setOpen(true);
-        }
-    }
-
     drawingFinished() {
-    // TODO: Remove this when handling drawing tools
+        // Hide confirmation toast when drawing is finished
+        // This will also clear the selected tool
+        this.hideDrawingConfirmation();
     }
 
     // Callback to remove all drawings
@@ -261,28 +266,36 @@ export default class DrawToolsStore {
         return value;
     };
 
-    // Callback that runs when a drawing tool is selected
-    selectTool(id: string) {
+    updateFloatingMenuPosition = ({ x, y }: TFloatingMenuPositionOffset) => {
+        // Store the position
+        this.floatingMenuPosition = { x, y };
+        // Update the floating menu position in the chart
+        this.mainStore.chartAdapter.flutterChart?.drawingTool.updateFloatingMenuPosition(x, y);
+    };
+
+    setSelectedTool = (toolId: string) => {
+        this.selectedToolId = toolId;
+        // Show confirmation toast when tool is selected
+        // The message will be dynamically generated by getDynamicMessage
+        this.showConfirmationToast = true;
+    };
+
+    clearSelectedTool = () => {
+        this.selectedToolId = null;
+        this.showConfirmationToast = false;
+    };
+
+    startAddingNewTool = (id: string) => {
+        this.setSelectedTool(id); // This will automatically show the confirmation toast
         this.menuStore.setOpen(false);
-        logEvent(LogCategories.ChartControl, LogActions.DrawTools, `Add ${id}`);
-        /// If found, remove the item with the given index
-        const finalItem = this.processDrawTool(id);
-        this.seletedDrawToolConfig = clone(finalItem);
-        finalItem.lineStyle = {
-            color: finalItem.lineStyle,
-        };
-        if (finalItem.fillStyle) {
-            finalItem.fillStyle = {
-                color: finalItem.fillStyle,
-            };
-        }
+        this.mainStore.chartAdapter.flutterChart?.drawingTool.startAddingNewTool(id);
+        // this.updateActiveToolsGroup(this.seletedDrawToolConfig);
+    };
 
-        delete finalItem.parameters;
-
-        if (finalItem) {
-            this.mainStore.chartAdapter.flutterChart?.drawingTool.addOrUpdateDrawing(JSON.stringify(finalItem));
-        }
-    }
+    cancelAddingNewTool = () => {
+        this.mainStore.chartAdapter.flutterChart?.drawingTool.cancelAddingNewTool();
+        this.hideDrawingConfirmation();
+    };
 
     /// The common function (now only responsible for creating finalItem)
     processDrawTool(id: string) {
@@ -368,113 +381,17 @@ export default class DrawToolsStore {
         this.activeToolsGroup = activeTools;
     }
 
-    /// Callback that runs after the creation of the drawing tool in flutter charts
-    onCreation() {
-        if (this.seletedDrawToolConfig !== null) {
-            this.updateActiveToolsGroup(this.seletedDrawToolConfig);
-            const drawingToolsItem = this.drawingToolsRepoArray();
-            if (!drawingToolsItem) {
-                return;
-            }
-
-            this.activeToolsGroup.forEach(item => {
-                item.items.forEach(data => {
-                    if (drawingToolsItem[data.index]) {
-                        const config: TDrawingCreatedConfig = drawingToolsItem[data.index];
-                        if (config) {
-                            if (
-                                this.seletedDrawToolConfig?.id &&
-                                this.seletedDrawToolConfig.id === 'channel' &&
-                                this.seletedDrawToolConfig.index === data.index
-                            ) {
-                                const edgePoints = config.edgePoints;
-                                if (edgePoints && edgePoints.length === 2) {
-                                    const incrementedConfig = drawingToolsItem[data.index + 1];
-                                    if (incrementedConfig) {
-                                        data.config = incrementedConfig;
-                                    }
-                                } else {
-                                    data.config = config;
-                                }
-                            } else {
-                                data.config = config;
-                            }
-                        }
-                    }
-                });
-            });
-
-            /// for continuous, re-initializing it with updated index
-            if (this.seletedDrawToolConfig.id === 'continuous') {
-                const finalItem = this.processDrawTool(this.seletedDrawToolConfig.id);
-                this.seletedDrawToolConfig = clone(finalItem);
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                this.selectTool(this.seletedDrawToolConfig!.id);
-            } else {
-                /// for other tools, making config to null
-                this.seletedDrawToolConfig = null;
-            }
-        }
-    }
-
-    /// When any of the property of a drawing tool is changed (lineStyle,fillStyle)
-    /// OnUpdate runs after this function as well
-    onChanged(parameters: TDrawingEditParameter[], drawingIndex?: number) {
-        let index;
-        this.mainStore.chartAdapter.flutterChart?.drawingTool.clearDrawingToolSelect();
-
-        const drawToolsItem = this.drawingToolsRepoArray();
-        if (!drawToolsItem) {
-            return;
-        }
-
-        if (!drawingIndex && drawingIndex !== 0) {
-            index = drawToolsItem.findIndex(item => item.configId === this.settingsDialog.id);
-        } else {
-            index = drawingIndex;
-        }
-
-        if (index === -1) return;
-
-        const selectedConfig = drawToolsItem[index];
-
-        parameters.forEach(item => {
-            if (!item.path) {
-                return;
-            }
-            if (item.type === 'colorpicker') {
-                selectedConfig[item.path].color = hexToInt(item.value as string);
-            } else if (item.type === 'switch') {
-                selectedConfig[item.path] = item.value;
-            }
-        });
-        this.mainStore.chartAdapter.flutterChart?.drawingTool.editDrawing(JSON.stringify(selectedConfig), index);
-    }
-
     /// Callback that runs when drawingTool is Deleted
     onDeleted(index?: number) {
         if (index !== undefined) {
-            this.mainStore.chartAdapter.flutterChart?.drawingTool.removeDrawingTool(index);
-            this.onUpdate();
+            const drawToolsItem = this.drawingToolsRepoArray();
+            const config = drawToolsItem ? drawToolsItem[index] : null;
+            if (config) {
+                this.mainStore.chartAdapter.flutterChart?.drawingTool.removeDrawingTool(index);
+            }
             /// Log the event
-            if (index) {
+            if (index && config) {
                 logEvent(LogCategories.ChartControl, LogActions.DrawTools, `Remove ${index}`);
-            }
-        }
-    }
-
-    /// When the settings are opened for a drawing tools
-    onSetting(index?: number) {
-        if (index !== undefined) {
-            let targetItem;
-            for (const group of this.activeToolsGroup) {
-                const foundItem = group.items.find(item => item.index === index);
-                if (foundItem) {
-                    targetItem = foundItem;
-                }
-            }
-            if (targetItem) {
-                this.showDrawToolDialog(targetItem);
             }
         }
     }
@@ -483,4 +400,49 @@ export default class DrawToolsStore {
     updatePortalNode(portalNodeId: string | undefined) {
         this.portalNodeIdChanged = portalNodeId;
     }
+
+    hideDrawingConfirmation = () => {
+        this.showConfirmationToast = false;
+        this.confirmationMessage = '';
+        this.resetAddingState();
+        // Clear selected tool when hiding confirmation
+        this.clearSelectedTool();
+    };
+
+    hideDeletionSnackbar = () => {
+        this.showDeletionSnackbar = false;
+        this.deletedToolName = '';
+    };
+
+    showDeletionSnackbarForDeletedTool = (deletedToolName: string) => {
+        this.deletedToolName = deletedToolName;
+        this.showDeletionSnackbar = true;
+    };
+
+    cancelDrawingTool = () => {
+        // Cancel current drawing operation
+        this.hideDrawingConfirmation();
+        this.mainStore.chartAdapter.flutterChart?.drawingTool.clearDrawingToolSelect();
+        this.seletedDrawToolConfig = null;
+        // drawingFinished() will call hideDrawingConfirmation() which clears the selected tool
+        this.drawingFinished();
+    };
+
+    updateAddingState = (currentStep: number, totalSteps: number) => {
+        this.addingStateInfo = {
+            currentStep,
+            totalSteps,
+            isFinished: currentStep === totalSteps,
+        };
+    };
+
+    resetAddingState = () => {
+        this.addingStateInfo = { currentStep: 0, totalSteps: 0, isFinished: true };
+    };
+
+    updateProps = (props: { drawingToolFloatingMenuPosition?: TFloatingMenuPositionOffset }) => {
+        if (props.drawingToolFloatingMenuPosition) {
+            this.updateFloatingMenuPosition(props.drawingToolFloatingMenuPosition);
+        }
+    };
 }

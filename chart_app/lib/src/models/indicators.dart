@@ -4,8 +4,7 @@ import 'dart:ui';
 
 import 'package:chart_app/src/misc/wrapped_controller.dart';
 
-import 'package:deriv_chart/deriv_chart.dart' hide AddOnsRepository;
-import 'package:chart_app/src/add_ons/add_ons_repository.dart';
+import 'package:deriv_chart/deriv_chart.dart';
 import 'package:chart_app/src/interop/js_interop.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
@@ -19,8 +18,11 @@ class IndicatorsModel {
   final AddOnsRepository<IndicatorConfig> indicatorsRepo =
       AddOnsRepository<IndicatorConfig>(
     createAddOn: (Map<String, dynamic> map) => IndicatorConfig.fromJson(map),
+    sharedPrefKey: 'indicators',
     onEditCallback: (int i) => JsInterop.indicators?.onEdit?.call(i),
-    onRemoveCallback: (int i) => JsInterop.indicators?.onRemove?.call(i),
+    onDeleteCallback: (AddOnConfig item, int index) {
+      JsInterop.indicators?.onRemove?.call(index);
+    },
     onSwapCallback: (int x, int y) => JsInterop.indicators?.onSwap?.call(x, y),
   );
 

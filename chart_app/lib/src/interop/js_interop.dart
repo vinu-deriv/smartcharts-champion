@@ -1,8 +1,19 @@
 import 'dart:js';
 
-import 'package:chart_app/src/add_ons/add_ons_repository.dart';
 import 'package:deriv_chart/deriv_chart.dart';
 import 'package:js/js.dart';
+
+/// Called when an addOn is to be edited
+typedef OnEditCallback = void Function(int index);
+
+/// Allow Updation when dragged (drawing tool)
+typedef OnUpdateCallback = void Function();
+
+/// Swaps two elements of a list.
+typedef OnSwapCallback = void Function(int index1, int index2);
+
+/// OnLoadCallback
+typedef OnLoadCallback = void Function(List<dynamic> config);
 
 /// JS Interop
 @JS('window.jsInterop')
@@ -164,6 +175,12 @@ class JsIndicators {
 /// Called when an addOn is created
 typedef OnAddDrawingCallback = void Function();
 
+/// Called when a drawing tool is removed with JSON data
+typedef OnRemoveDrawingCallback = void Function(String deletedToolName);
+
+/// Called when drawing tool state changes
+typedef OnStateChangedCallback = void Function(int currentStep, int totalSteps);
+
 @JS()
 @anonymous
 
@@ -179,7 +196,7 @@ class JsDrawings {
   external OnLoadCallback? onLoad;
 
   /// Called when an drawing is removed
-  external OnEditCallback? onRemove;
+  external OnRemoveDrawingCallback? onRemove;
 
   /// Called when an drawing is edited
   external OnEditCallback? onEdit;
@@ -192,6 +209,9 @@ class JsDrawings {
 
   /// Callback to notify mouse exit over the addon.
   external OnMouseExitCallback? onMouseExit;
+
+  /// Called when drawing tool state changes
+  external OnStateChangedCallback? onStateChanged;
 }
 
 @JS()

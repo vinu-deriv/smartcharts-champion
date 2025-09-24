@@ -52,4 +52,13 @@ export type TMainStore = {
     chartAdapter: ChartAdapterStore;
 };
 
+export type TAddingStateInfo = {
+    /** The current step of the adding process of a DrawingAddingPreview */
+    currentStep: number;
+    /** The total number of steps required to complete the adding process */
+    totalSteps: number;
+    /** Indicates whether the adding process is finished */
+    readonly isFinished: boolean;
+};
+
 export type Stores = Notifier;

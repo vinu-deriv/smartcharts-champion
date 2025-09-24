@@ -1,13 +1,13 @@
 import {
-    DrawToolsChannelIcon,
-    DrawToolsContinuousIcon,
-    DrawToolsFibonaccifanIcon,
+    // DrawToolsChannelIcon,
+    // DrawToolsContinuousIcon,
+    // DrawToolsFibonaccifanIcon,
     DrawToolsHorizontalIcon,
     DrawToolsLineIcon,
-    DrawToolsRayIcon,
-    DrawToolsRectangleIcon,
-    DrawToolsTrendIcon,
-    DrawToolsVerticalIcon,
+    // DrawToolsRayIcon,
+    // DrawToolsRectangleIcon,
+    // DrawToolsTrendIcon,
+    // DrawToolsVerticalIcon,
     FlagIcons,
     IndicatorAdxIcon,
     IndicatorAlligatorIcon,
@@ -57,20 +57,21 @@ type TDrawTools = {
         id: string;
         text: string;
         icon: TIcon;
+        configType?: string;
     };
 };
-
+// TODO: Add back the drawing tools when their implementations are done.
 export const getDrawTools: () => TDrawTools = () => ({
-    channel: { id: 'channel', text: t.translate('Channel [num]'), icon: DrawToolsChannelIcon },
-    continuous: { id: 'continuous', text: t.translate('Continuous [num]'), icon: DrawToolsContinuousIcon },
-    fibfan: { id: 'fibfan', text: t.translate('Fib Fan [num]'), icon: DrawToolsFibonaccifanIcon },
-    horizontal: { id: 'horizontal', text: t.translate('Horizontal [num]'), icon: DrawToolsHorizontalIcon },
-    line: { id: 'line', text: t.translate('Line [num]'), icon: DrawToolsLineIcon },
-    ray: { id: 'ray', text: t.translate('Ray [num]'), icon: DrawToolsRayIcon },
+    // channel: { id: 'channel', text: t.translate('Channel [num]'), icon: DrawToolsChannelIcon },
+    // continuous: { id: 'continuous', text: t.translate('Continuous [num]'), icon: DrawToolsContinuousIcon },
+    // fibfan: { id: 'fibfan', text: t.translate('Fib Fan [num]'), icon: FibfanDrawingToolConfig },
+    horizontal: { id: 'horizontal', text: t.translate('Horizontal line [num]'), icon: DrawToolsHorizontalIcon },
+    line: { id: 'line', text: t.translate('Trend line [num]'), icon: DrawToolsLineIcon },
+    // ray: { id: 'ray', text: t.translate('Ray [num]'), icon: DrawToolsRayIcon },
     // continuous: { id: 'continuous', text: t.translate('Continuous [num]'), icon: DrawToolsRayIcon },
-    rectangle: { id: 'rectangle', text: t.translate('Rectangle [num]'), icon: DrawToolsRectangleIcon },
-    trend: { id: 'trend', text: t.translate('Trend [num]'), icon: DrawToolsTrendIcon },
-    vertical: { id: 'vertical', text: t.translate('Vertical [num]'), icon: DrawToolsVerticalIcon },
+    // rectangle: { id: 'rectangle', text: t.translate('Rectangle [num]'), icon: DrawToolsRectangleIcon },
+    // trend: { id: 'trend', text: t.translate('Trend [num]'), icon: DrawToolsTrendIcon },
+    // vertical: { id: 'vertical', text: t.translate('Vertical [num]'), icon: DrawToolsVerticalIcon },
 });
 
 export const getTooltipLabels = (key: string, activeItem?: TActiveItem) => {
@@ -2122,3 +2123,4 @@ export const TooltipsContent = {
         'This indicator does not support 1-tick intervals. To use this indicator, change your chart time interval to 1 minute or more.'
     ),
 };
+
