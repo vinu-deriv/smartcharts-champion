@@ -104,7 +104,8 @@ class ChartConfigModel extends ChangeNotifier {
             epoch: _marker.epoch! * 1000,
             text: _marker.text,
             markerType: MarkerType.values.byName(_marker.type!),
-            direction: MarkerDirection.up,
+            direction: MarkerDirection.values.byName(
+                _marker.direction ?? 'up'), // Default to 'up' if null
             color: _marker.color != null
                 ? getColorFromString(_marker.color!)
                 : null,
@@ -127,7 +128,12 @@ class ChartConfigModel extends ChangeNotifier {
           ),
           props: MarkerProps(
               hasPersistentBorders:
-                  _getProperty(_markerGroup.props, 'hasPersistentBorders')),
+                  _getProperty(_markerGroup.props, 'hasPersistentBorders'),
+              isProfit: _getProperty(_markerGroup.props, 'isProfit'),
+              isRunning: _getProperty(_markerGroup.props, 'isRunning'),
+              markerLabel: _getProperty(_markerGroup.props, 'markerLabel'),
+              contractMarkerLeftPadding: _getProperty(
+                  _markerGroup.props, 'contractMarkerLeftPadding')),
         ),
       );
     }

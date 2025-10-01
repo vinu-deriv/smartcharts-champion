@@ -131,6 +131,9 @@ class JsMarker {
 
   /// Marker color
   external String? get color;
+
+  /// Marker direction
+  external String? get direction;
 }
 
 @JS()
