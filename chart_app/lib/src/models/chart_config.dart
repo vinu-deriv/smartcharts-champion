@@ -104,8 +104,8 @@ class ChartConfigModel extends ChangeNotifier {
             epoch: _marker.epoch! * 1000,
             text: _marker.text,
             markerType: MarkerType.values.byName(_marker.type!),
-            direction: MarkerDirection.values.byName(
-                _marker.direction ?? 'up'), // Default to 'up' if null
+            direction: MarkerDirection.values
+                .byName(_marker.direction ?? 'up'), // Default to 'up' if null
             color: _marker.color != null
                 ? getColorFromString(_marker.color!)
                 : null,
@@ -122,18 +122,22 @@ class ChartConfigModel extends ChangeNotifier {
       markerGroupList.add(
         MarkerGroup(
           markers,
+          direction: MarkerDirection.values.byName(_markerGroup.direction),
           type: _markerGroup.type,
           style: MarkerStyle(
             backgroundColor: _bgColor,
           ),
           props: MarkerProps(
-              hasPersistentBorders:
-                  _getProperty(_markerGroup.props, 'hasPersistentBorders'),
-              isProfit: _getProperty(_markerGroup.props, 'isProfit'),
-              isRunning: _getProperty(_markerGroup.props, 'isRunning'),
-              markerLabel: _getProperty(_markerGroup.props, 'markerLabel'),
-              contractMarkerLeftPadding: _getProperty(
-                  _markerGroup.props, 'contractMarkerLeftPadding')),
+            hasPersistentBorders:
+                _getProperty(_markerGroup.props, 'hasPersistentBorders'),
+            isProfit: _getProperty(_markerGroup.props, 'isProfit'),
+            isRunning: _getProperty(_markerGroup.props, 'isRunning'),
+            markerLabel: _getProperty(_markerGroup.props, 'markerLabel'),
+            contractMarkerLeftPadding:
+                _getProperty(_markerGroup.props, 'contractMarkerLeftPadding'),
+          ),
+          currentEpoch: _markerGroup.currentEpoch,
+          profitAndLossText: _markerGroup.profitAndLossText,
         ),
       );
     }
