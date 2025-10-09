@@ -259,6 +259,63 @@
             height: 430px;
         }
         &--tabular {
+            .sc-dtools__panel {
+                width: 100%;
+            }
+            .sc-dtools__category {
+                margin-top: 0;
+            }
+            .sc-dtools__category__head {
+                padding-left: 1rem;
+            }
+            .sc-dialog__body {
+                @include themify($themes) {
+                    background: themed('DialogTabularHeadBg');
+                }
+
+                .react-tabs__tab-list {
+                    display: flex;
+                    font-size: 14px;
+                    @include themify($themes) {
+                        border-bottom: 2px solid themed('DialogTabularHeadBorder');
+                    }
+
+                    .ic-icon {
+                        svg {
+                            height: 16px;
+                            width: 16px;
+                        }
+                    }
+                    .react-tabs__tab {
+                        display: flex;
+                        width: 100%;
+                        padding: 10px 15px;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 10px;
+
+                        .sc-notification-badge {
+                            width: 19px;
+                            height: 19px;
+                            border-radius: 10px;
+                            top: 12px;
+                            right: 35px;
+                            font-size: 12px;
+                        }
+                    }
+                    .react-tabs__tab:focus:after {
+                        display: none;
+                    }
+                    .react-tabs__tab--selected {
+                        border: none;
+                        font-weight: bold;
+
+                        @include themify($themes) {
+                            border-bottom: 3px solid themed('DialogTabularActiveTabBorder');
+                        }
+                    }
+                }
+            }
             .sc-dialog__head {
                 @include themify($themes) {
                     background: themed('DialogTabularHeadBg');
@@ -268,9 +325,8 @@
                 .sc-dialog__head--title {
                     width: 150px;
                     min-width: 150px;
-                    padding: 16px 8px;
+                    padding: 15px;
                     @include themify($themes) {
-                        border-left: 50px solid themed('DialogTabularHeadTitleBg');
                         background: transparent;
                     }
                 }

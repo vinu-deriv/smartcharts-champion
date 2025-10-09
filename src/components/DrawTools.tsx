@@ -99,11 +99,7 @@ const ActiveDrawToolsListGroup = ({ group, onDelete }: TActiveDrawToolsListGroup
         <div className='sc-dtools__category__body'>
             <div className='sc-dtools__list'>
                 {group.items.map(item => (
-                    <ActiveDrawToolsListItem
-                        key={item.index}
-                        item={{ ...item }}
-                        onDelete={onDelete}
-                    />
+                    <ActiveDrawToolsListItem key={item.index} item={{ ...item }} onDelete={onDelete} />
                 ))}
             </div>
         </div>
@@ -125,11 +121,7 @@ const ActiveDrawToolsList = ({ activeDrawToolsGroup, onDelete }: TActiveDrawTool
                     <ActiveDrawToolsListGroup group={group} key={group.id} onDelete={onDelete} />
                 ) : (
                     group.items.map(item => (
-                        <ActiveDrawToolsListItem
-                            key={item.index}
-                            item={item}
-                            onDelete={onDelete}
-                        />
+                        <ActiveDrawToolsListItem key={item.index} item={item} onDelete={onDelete} />
                     ))
                 )
             )}
@@ -138,8 +130,8 @@ const ActiveDrawToolsList = ({ activeDrawToolsGroup, onDelete }: TActiveDrawTool
 };
 
 const DrawTools = ({ portalNodeId }: DrawToolsProps) => {
-    const { drawTools } = useStores();
-
+    const { drawTools, chart } = useStores();
+    const { isMobile } = chart;
     const {
         clearAll,
         startAddingNewTool,
@@ -174,7 +166,13 @@ const DrawTools = ({ portalNodeId }: DrawToolsProps) => {
             </Menu.Title>
 
             <Menu.Body>
-                <Tabs className='tabs--vertical'>
+                <Tabs
+                    className={classNames({
+                        'tabs--vertical': !isMobile,
+                        'tabs--horizontal': isMobile,
+                    })}
+                >
+                    {' '}
                     <TabList>
                         <Tab>
                             <ActiveIcon />

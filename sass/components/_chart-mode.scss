@@ -90,6 +90,11 @@
         top: 3px;
         left: 8px;
     }
+
+    @media screen and (max-width: 600px) {
+        display: flex;
+        width: auto !important;
+    }
 }
 
 .smartcharts-mobile {
