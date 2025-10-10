@@ -6,9 +6,9 @@
     z-index: 1000;
 
     display: flex;
-    max-width: 35rem;
+    max-width: 90vw;
+    width: max-content;
     min-height: 3rem;
-    max-height: 3.75rem;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
     align-items: center;
     gap: 0.5rem;
@@ -38,9 +38,6 @@
     }
     &__message {
         flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
     &__close {
         background: none;
@@ -115,11 +112,9 @@
     @keyframes slideUpSnackbar {
         from {
             opacity: 0;
-            transform: translateY(20px);
         }
         to {
             opacity: 1;
-            transform: translateY(0);
         }
     }
 }
