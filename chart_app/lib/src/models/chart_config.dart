@@ -122,7 +122,8 @@ class ChartConfigModel extends ChangeNotifier {
       markerGroupList.add(
         MarkerGroup(
           markers,
-          direction: MarkerDirection.values.byName(_markerGroup.direction),
+          direction: MarkerDirection.values
+                .byName(_markerGroup.direction ?? 'up'),
           type: _markerGroup.type,
           style: MarkerStyle(
             backgroundColor: _bgColor,
