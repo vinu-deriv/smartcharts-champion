@@ -159,8 +159,8 @@ class DrawingToolModel {
     // TODO(Anyone): Uncomment the below cases when their implementations
     // are done.
     switch (type) {
-      // case 'vertical':
-      //   return const VerticalDrawingToolConfig();
+      case 'vertical':
+        return const VerticalDrawingToolConfig();
       case 'line':
         return const LineDrawingToolConfig();
       // case 'ray':
