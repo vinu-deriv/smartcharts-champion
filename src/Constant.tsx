@@ -71,7 +71,7 @@ export const getDrawTools: () => TDrawTools = () => ({
     // continuous: { id: 'continuous', text: t.translate('Continuous [num]'), icon: DrawToolsRayIcon },
     // rectangle: { id: 'rectangle', text: t.translate('Rectangle [num]'), icon: DrawToolsRectangleIcon },
     // trend: { id: 'trend', text: t.translate('Trend [num]'), icon: DrawToolsTrendIcon },
-    vertical: { id: 'vertical', text: t.translate('Vertical [num]'), icon: DrawToolsVerticalIcon },
+    vertical: { id: 'vertical', text: t.translate('Vertical line [num]'), icon: DrawToolsVerticalIcon },
 });
 
 export const getTooltipLabels = (key: string, activeItem?: TActiveItem) => {
