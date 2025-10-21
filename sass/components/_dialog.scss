@@ -272,6 +272,7 @@
                 @include themify($themes) {
                     background: themed('DialogTabularHeadBg');
                 }
+
                 .tabs {
                     &--horizontal {
                         .react-tabs__tab-list {
