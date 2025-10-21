@@ -273,45 +273,64 @@
                     background: themed('DialogTabularHeadBg');
                 }
 
-                .react-tabs__tab-list {
-                    display: flex;
-                    font-size: 14px;
-                    @include themify($themes) {
-                        border-bottom: 2px solid themed('DialogTabularHeadBorder');
-                    }
+                .tabs {
+                    &--horizontal {
+                        .react-tabs__tab-list {
+                            display: flex;
+                            font-size: 14px;
+                            @include themify($themes) {
+                                border-bottom: 2px solid themed('DialogTabularHeadBorder');
+                            }
 
-                    .ic-icon {
-                        svg {
-                            height: 16px;
-                            width: 16px;
-                        }
-                    }
-                    .react-tabs__tab {
-                        display: flex;
-                        width: 100%;
-                        padding: 10px 15px;
-                        justify-content: center;
-                        align-items: center;
-                        gap: 10px;
+                            .ic-icon {
+                                svg {
+                                    height: 16px;
+                                    width: 16px;
 
-                        .sc-notification-badge {
-                            width: 19px;
-                            height: 19px;
-                            border-radius: 10px;
-                            top: 12px;
-                            right: 35px;
-                            font-size: 12px;
-                        }
-                    }
-                    .react-tabs__tab:focus:after {
-                        display: none;
-                    }
-                    .react-tabs__tab--selected {
-                        border: none;
-                        font-weight: bold;
+                                    @include themify($themes) {
+                                        fill: themed('DialogHeadIcon');
+                                    }
+                                }
+                            }
+                            .react-tabs__tab {
+                                display: flex;
+                                width: 100%;
+                                padding: 10px 15px;
+                                justify-content: center;
+                                align-items: center;
+                                gap: 10px;
+                                @include themify($themes) {
+                                    color: themed('DialogTabularText');
+                                }
 
-                        @include themify($themes) {
-                            border-bottom: 3px solid themed('DialogTabularActiveTabBorder');
+                                .sc-notification-badge {
+                                    width: 19px;
+                                    height: 19px;
+                                    border-radius: 10px;
+                                    top: 12px;
+                                    right: 35px;
+                                    font-size: 12px;
+                                }
+                            }
+                            .react-tabs__tab:focus:after {
+                                display: none;
+                            }
+                            .react-tabs__tab--selected {
+                                border: none;
+                                font-weight: bold;
+
+                                @include themify($themes) {
+                                    color: themed('DialogTabularActiveTabText') !important;
+                                    background: themed('DialogTabularActiveTabBg') !important;
+                                    border-bottom: 3px solid themed('DialogTabularActiveTabBorder');
+                                }
+
+                                .ic-icon {
+                                    @include themify($themes) {
+                                        fill: themed('DialogTabularActiveTabText');
+                                    }
+                                }
+                            }
                         }
                     }
                 }
