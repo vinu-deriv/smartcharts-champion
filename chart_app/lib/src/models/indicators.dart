@@ -41,7 +41,16 @@ class IndicatorsModel {
 
   /// To remove an existing indicator
   void removeIndicator(int index) {
+    // Don't call the onRemove callback when removing an indicator
+    // This prevents a circular reference where the JavaScript side calls removeIndicator
+    // and then the Dart side calls back to JavaScript through onRemove
+    final onRemoveCallback = indicatorsRepo.onDeleteCallback;
+    indicatorsRepo.onDeleteCallback = null;
+    
     indicatorsRepo.removeAt(index);
+    
+    // Restore the callback after removing the indicator
+    indicatorsRepo.onDeleteCallback = onRemoveCallback;
   }
 
   /// To clear all indicators
