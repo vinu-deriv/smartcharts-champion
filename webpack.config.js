@@ -166,6 +166,7 @@ const config = {
     plugins: [
         new webpack.ProvidePlugin({
             t: [path.resolve(__dirname, './src/Translation.ts'), 't'],
+            React: 'react', // Automatically provide React variable
         }),
         new MiniCssExtractPlugin({ filename: 'smartcharts.css' }),
         new StyleLintPlugin(),
