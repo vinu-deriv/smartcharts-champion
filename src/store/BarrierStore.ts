@@ -42,6 +42,7 @@ export default class BarrierStore {
     shadeColor?: string;
     color?: string;
     foregroundColor?: string;
+    backgroundColor?: string;
     isBetweenShadeVisible = false;
     isTopShadeVisible = false;
     isBottomShadeVisible = false;
@@ -64,6 +65,7 @@ export default class BarrierStore {
 
     constructor(mainStore: MainStore) {
         makeObservable(this, {
+            backgroundColor: observable,
             color: observable,
             destructor: action.bound,
             foregroundColor: observable,
@@ -125,6 +127,7 @@ export default class BarrierStore {
     updateProps({
         color,
         foregroundColor,
+        backgroundColor,
         shadeColor,
         shade,
         high,
@@ -150,6 +153,9 @@ export default class BarrierStore {
                 if (foregroundColor) {
                     this.foregroundColor = foregroundColor;
                 }
+                if (backgroundColor !== undefined) {
+                    this.backgroundColor = backgroundColor;
+                }
                 if (shadeColor) {
                     this.shadeColor = shadeColor;
                 }
@@ -163,10 +169,18 @@ export default class BarrierStore {
                     this.draggable = draggable;
                 }
                 if (high !== undefined) {
-                    this.high_barrier = getStringValue(high, this.pip);
+                    const newHigh = getStringValue(high, this.pip);
+                    // Only update if the value actually changed to avoid unnecessary redraws
+                    if (newHigh !== this.high_barrier) {
+                        this.high_barrier = newHigh;
+                    }
                 }
                 if (low !== undefined) {
-                    this.low_barrier = getStringValue(low, this.pip);
+                    const newLow = getStringValue(low, this.pip);
+                    // Only update if the value actually changed to avoid unnecessary redraws
+                    if (newLow !== this.low_barrier) {
+                        this.low_barrier = newLow;
+                    }
                 }
                 if (onChange) {
                     this.onBarrierChange = onChange;
