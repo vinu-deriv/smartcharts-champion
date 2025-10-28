@@ -30,8 +30,7 @@ const ConnectStoreWrapper = ({
 
     React.useEffect(() => {
         storeRef.current?.updateProps?.(props as TConnectStoreWrapperProps);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [JSON.stringify(props)]);
+    });
 
     React.useEffect(() => {
         return () => {
