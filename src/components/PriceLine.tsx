@@ -96,7 +96,7 @@ const PriceLine = ({
                             backgroundColor: isOverlappingWithPriceLine ? undefined : backgroundColor,
                             color: isOverlappingWithPriceLine ? color : foregroundColor,
                             borderColor: color,
-                            width: draggable && isOverlappingWithPriceLine ? width + 6 : width - 6,
+                            width: draggable && isOverlappingWithPriceLine ? width + 8 : width - 6,
                             opacity,
                             right: price_right_offset,
                         }}
