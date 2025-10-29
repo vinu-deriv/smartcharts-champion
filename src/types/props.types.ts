@@ -192,6 +192,7 @@ export type TBarrierUpdateProps = {
     shadeColor: string | undefined;
     foregroundColor: string | null;
     color: string;
+    backgroundColor?: string;
     onChange: (param: TBarrierChangeParam) => void;
     relative: boolean;
     draggable: boolean;

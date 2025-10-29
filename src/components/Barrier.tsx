@@ -18,6 +18,7 @@ const Barrier = ({ store, ...props }: TBarrierBaseProps) => {
         aboveShadeStore,
         belowShadeStore,
         betweenShadeStore,
+        backgroundColor = '#2C9AFF',
         color = '#008832',
         foregroundColor = '#ffffff',
         hideBarrierLine,
@@ -53,6 +54,7 @@ const Barrier = ({ store, ...props }: TBarrierBaseProps) => {
             <PriceLine
                 store={_high_barrier}
                 lineStyle={lineStyle}
+                backgroundColor={backgroundColor}
                 color={color}
                 foregroundColor={foregroundColor}
                 hideOffscreenBarrier={hideOffscreenBarrier}
@@ -66,6 +68,7 @@ const Barrier = ({ store, ...props }: TBarrierBaseProps) => {
                     <PriceLine
                         store={_low_barrier}
                         lineStyle={lineStyle}
+                        backgroundColor={backgroundColor}
                         color={color}
                         foregroundColor={foregroundColor}
                         hideOffscreenBarrier={hideOffscreenBarrier}
