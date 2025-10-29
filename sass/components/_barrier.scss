@@ -165,11 +165,7 @@
             width: 8px;
         }
         &--hidden {
-            color: transparent;
-
-            @include themify($themes) {
-                background: themed('DefaultMain');
-            }
+            background-color: transparent;
 
             div {
                 background-color: $color-blue;

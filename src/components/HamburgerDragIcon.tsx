@@ -1,22 +1,14 @@
+import classNames from 'classnames';
+
 type THamburgerDragIconProps = {
     isOverlapping?: boolean;
 };
 
 const HamburgerDragIcon = ({ isOverlapping }: THamburgerDragIconProps) => (
-    <div
-        className='drag-icon'
-        style={
-            isOverlapping
-                ? {
-                      color: 'transparent',
-                      backgroundColor: 'transparent',
-                  }
-                : undefined
-        }
-    >
-        <div style={isOverlapping ? { backgroundColor: 'transparent' } : undefined}></div>
-        <div style={isOverlapping ? { backgroundColor: 'transparent' } : undefined}></div>
-        <div style={isOverlapping ? { backgroundColor: 'transparent' } : undefined}></div>
+    <div className={classNames('drag-icon', { 'drag-icon--hidden': isOverlapping })}>
+        <div className={classNames({ 'drag-icon--hidden': isOverlapping })} />
+        <div className={classNames({ 'drag-icon--hidden': isOverlapping })} />
+        <div className={classNames({ 'drag-icon--hidden': isOverlapping })} />
     </div>
 );
 
