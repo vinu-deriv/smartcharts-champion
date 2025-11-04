@@ -1,5 +1,5 @@
 <h1 align="center">
-  SmartCharts V2 Champion
+  SmartCharts
 </h1>
 
 ## In this document:
