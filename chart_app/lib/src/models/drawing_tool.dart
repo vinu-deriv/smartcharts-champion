@@ -13,7 +13,11 @@ class DrawingToolModel {
       createAddOn: (Map<String, dynamic> map) =>
           DrawingToolConfig.fromJson(map),
       onDeleteCallback: (AddOnConfig item, int index) {
-        JsInterop.drawingTool?.onRemove?.call(item.toJson()['name']);
+        final Map<String, dynamic> config = item.toJson(); 
+        // Convert the config to a JSON string and then parse it back to ensure it's properly serialized
+        final String jsonConfigString = jsonEncode(config); 
+        // Pass both the name and the full config object
+        JsInterop.drawingTool?.onRemove?.call(config['name'], jsonConfigString);
       },
       sharedPrefKey: 'drawing_tools',
     );
@@ -29,7 +33,17 @@ class DrawingToolModel {
 
     // Add listener to the repository to detect when drawing tools are added/removed
     drawingToolsRepo.addListener(_onDrawingToolsRepoChanged);
+    
+    // Initialize previous repository length
+    _previousRepoLength = 0;
   }
+  
+  // Track the previous repository length to detect additions
+  int _previousRepoLength = 0;
+  
+  // Flag to indicate if we're in the initial loading phase
+  // During this phase, we don't want to trigger onToolAdded events
+  bool _isInitialLoading = true;
 
   InteractiveLayerBehaviour interactiveLayerBehaviour =
       InteractiveLayerDesktopBehaviour();
@@ -60,6 +74,7 @@ class DrawingToolModel {
   }
 
   Future<void> _loadSavedDrawingTools() async {
+    _isInitialLoading = true;   
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     drawingToolsRepo.loadFromPrefs(prefs, symbol);
 
@@ -73,7 +88,9 @@ class DrawingToolModel {
       if (drawingToolsJson.isNotEmpty) {
         // Notify JavaScript side that drawing tools have been loaded
         JsInterop.drawingTool?.onLoad?.call(drawingToolsJson);
+        _previousRepoLength = drawingToolsRepo.items.length;
       }
+      _isInitialLoading = false;
     });
   }
 
@@ -139,6 +156,19 @@ class DrawingToolModel {
   void _onDrawingToolsRepoChanged() {
     // Notify JavaScript side when drawing tools repository changes
     // This triggers a refresh of the UI to show the updated drawing tools count
+    if (_previousRepoLength < drawingToolsRepo.items.length) {
+      // Get the newly added tools
+      final List<DrawingToolConfig> newTools = drawingToolsRepo.items.sublist(_previousRepoLength);
+      for (final DrawingToolConfig tool in newTools) {
+        final String toolJson = jsonEncode(tool);
+        
+        // Only notify about new tools if we're not in the initial loading phase
+        if (!_isInitialLoading) {
+          JsInterop.drawingTool?.onToolAdded?.call(toolJson);
+        }
+      }
+    }
+    _previousRepoLength = drawingToolsRepo.items.length;
     JsInterop.drawingTool?.onUpdate?.call();
   }
 

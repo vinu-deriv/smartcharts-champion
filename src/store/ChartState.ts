@@ -37,6 +37,10 @@ type TStateChangeOption = {
     symbol?: string;
     symbol_category?: string;
     time_interval_name?: string;
+    drawing_tool_name?: string;
+    pxthickness?: string;
+    color_name?: string;
+    enable_smooth_chart?: string;
 };
 
 class ChartState {

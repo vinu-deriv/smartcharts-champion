@@ -474,6 +474,7 @@ export type JSInterop = {
     drawingTool: {
         onUpdate: (index: number, config: TDrawingToolConfig) => void;
         onLoad: (drawings: []) => void;
+        onToolAdded: (toolJson: string) => void;
         onRemove: (deletedToolName: string) => void;
         onStateChanged: (currentStep: number, totalSteps: number) => void;
     };

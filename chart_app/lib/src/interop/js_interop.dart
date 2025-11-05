@@ -187,8 +187,11 @@ class JsIndicators {
 /// Called when an addOn is created
 typedef OnAddDrawingCallback = void Function();
 
+/// Called when a drawing tool is added with JSON data
+typedef OnToolAddedCallback = void Function(String toolJson);
+
 /// Called when a drawing tool is removed with JSON data
-typedef OnRemoveDrawingCallback = void Function(String deletedToolName);
+typedef OnRemoveDrawingCallback = void Function(String deletedToolName, String? config);
 
 /// Called when drawing tool state changes
 typedef OnStateChangedCallback = void Function(int currentStep, int totalSteps);
@@ -206,6 +209,9 @@ class JsDrawings {
 
   /// Called when the data is loaded from prefs
   external OnLoadCallback? onLoad;
+
+  /// Called when a specific drawing tool is added
+  external OnToolAddedCallback? onToolAdded;
 
   /// Called when an drawing is removed
   external OnRemoveDrawingCallback? onRemove;

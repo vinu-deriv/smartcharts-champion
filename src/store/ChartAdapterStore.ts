@@ -4,6 +4,8 @@ import debounce from 'lodash-es/debounce';
 import { TFlutterChart, TLoadHistoryParams, TQuote } from 'src/types';
 import { createChartElement, runChartApp } from 'src/flutter-chart';
 import Painter from 'src/flutter-chart/painter';
+import { STATE } from 'src/Constant';
+import { intToHexColor } from 'src/components/ui/utils';
 import MainStore from '.';
 
 export default class ChartAdapterStore {
@@ -127,7 +129,16 @@ export default class ChartAdapterStore {
                 onLoad: (items: []) => {
                     this.mainStore.drawTools.onLoad(items);
                 },
-                onRemove: (deletedToolName: string) => {
+                onToolAdded: (toolJson: string) => {
+                    const tool = JSON.parse(toolJson);
+                    this.mainStore.drawTools.onToolAdded(tool);
+                },
+                onRemove: (deletedToolName: string, config?: string) => {
+                    this.mainStore.state.stateChange(STATE.DRAWING_TOOLS_DELETE, {
+                        drawing_tool_name: deletedToolName.replace('dt_', '') || 'unknown',
+                        pxthickness: config ? `${JSON.parse(config).lineStyle?.thickness}px` : undefined,
+                        color_name: config ? `${intToHexColor(Number(JSON.parse(config).lineStyle?.color)).replace('#', '')}` : undefined,
+                    });
                     this.mainStore.drawTools.showDeletionSnackbarForDeletedTool(deletedToolName);
                 },
                 onStateChanged: (currentStep: number, totalSteps: number) => {
