@@ -10,7 +10,7 @@ import {
 import set from 'lodash-es/set';
 import { capitalize, hexToInt, intToHexColor } from 'src/components/ui/utils';
 import MainStore from '.';
-import { getDefaultDrawingConfig, getDrawTools } from '../Constant';
+import { getDefaultDrawingConfig, getDrawTools, STATE } from '../Constant';
 import { clone, isLiteralObject, safeParse, transformStudiesforTheme } from '../utils';
 import { LogActions, LogCategories, logEvent } from '../utils/ga';
 import MenuStore from './MenuStore';
@@ -33,9 +33,11 @@ export type TActiveDrawingItem = {
     name: string;
     lineStyle?: {
         color: number;
+        thickness?: number;
     };
     fillStyle?: {
         color: number;
+        thickness?: number;
     };
     num: number;
     index: number;
@@ -83,6 +85,7 @@ export type TDrawingEditParameter =
 
 export default class DrawToolsStore {
     _pervDrawingObjectCount = 0;
+    _previousDrawingTools: TDrawingCreatedConfig[] = [];
     mainStore: MainStore;
     menuStore: MenuStore;
     settingsDialog: SettingsDialogStore;
@@ -116,6 +119,7 @@ export default class DrawToolsStore {
             onDeleted: action.bound,
             updatePortalNode: action.bound,
             onLoad: action.bound,
+            onToolAdded: action.bound,
             hideDrawingConfirmation: action.bound,
             hideDeletionSnackbar: action.bound,
             showDeletionSnackbarForDeletedTool: action.bound,
@@ -231,6 +235,25 @@ export default class DrawToolsStore {
                 });
                 this.updateActiveToolsGroup(finalItem);
             }
+        });
+
+        // Store the current state of drawing tools to prevent reporting existing tools as new
+        // when onUpdate is called after loading
+        const drawToolsItem = this.drawingToolsRepoArray();
+        if (drawToolsItem) {
+            this._previousDrawingTools = JSON.parse(JSON.stringify(drawToolsItem));
+        }
+    }
+
+    // Callback that runs when a specific drawing tool is added
+    onToolAdded(tool: TDrawingCreatedConfig) {
+        if(!tool.lineStyle) return;
+
+        // Track drawing tool add event
+        this.handleStateChange(tool.name?.replace('dt_', '') || 'unknown', STATE.DRAWING_TOOLS_ADD, {
+            drawing_tool_name: tool.name?.replace('dt_', '') || 'unknown',
+            pxthickness: `default_${tool.lineStyle.thickness}px`,
+            color_name: `default_${intToHexColor(Number(tool.lineStyle.color)).replace('#', '')}`,
         });
     }
 
@@ -359,8 +382,57 @@ export default class DrawToolsStore {
     onUpdate() {
         const drawToolsItem = this.drawingToolsRepoArray();
         if (drawToolsItem) {
+            // Find the updated drawing tool by comparing with the previous state
+            if (this._previousDrawingTools && this._previousDrawingTools.length === drawToolsItem.length) {
+                for (let i = 0; i < drawToolsItem.length; i++) {
+                    if (JSON.stringify(this._previousDrawingTools[i]) !== JSON.stringify(drawToolsItem[i])) {
+                        this._identifyChanges(this._previousDrawingTools[i], drawToolsItem[i]);
+                    }
+                }
+            }
+
+            // Store the current state for future comparison
+            this._previousDrawingTools = JSON.parse(JSON.stringify(drawToolsItem));
+
             this.onLoad(drawToolsItem);
         }
+    }
+
+    // Helper method to identify what changed between previous and current state
+    _identifyChanges(previous: TDrawingCreatedConfig, current: TDrawingCreatedConfig) {
+        if (!previous || !current) return 'Complete replacement';
+
+        // Check all properties in current
+        Object.keys(current).forEach(key => {
+            // Handle nested objects like edgePoints, lineStyle, fillStyle specially
+            if (
+                ['lineStyle', 'fillStyle'].includes(key) &&
+                typeof current[key] === 'object' &&
+                current[key] !== null &&
+                typeof previous[key] === 'object' &&
+                previous[key] !== null
+            ) {
+                // Check color changes
+                if (current[key].color !== previous[key].color) {
+                    this.handleStateChange(
+                        current.name?.replace('dt_', '') || 'unknown',
+                        STATE.DRAWING_TOOLS_EDIT_COLOR,
+                        {
+                            drawing_tool_name: current.name?.replace('dt_', '') || 'unknown',
+                            color_name: `${intToHexColor(current[key].color).replace('#', '')}`,
+                        }
+                    );
+                }
+
+                // Check thickness changes
+                if (current[key].thickness !== previous[key].thickness) {
+                    this.handleStateChange(current.name?.replace('dt_', '') || 'unknown', STATE.DRAWING_TOOLS_EDIT_PX, {
+                        drawing_tool_name: current.name?.replace('dt_', '') || 'unknown',
+                        pxthickness: `${current[key].thickness}px`,
+                    });
+                }
+            }
+        });
     }
 
     /// Used to add item in activeToolsGroup
@@ -387,7 +459,14 @@ export default class DrawToolsStore {
             const drawToolsItem = this.drawingToolsRepoArray();
             const config = drawToolsItem ? drawToolsItem[index] : null;
             if (config) {
+                // Store the config before removing the drawing tool
+                const toolConfig = { ...config };
                 this.mainStore.chartAdapter.flutterChart?.drawingTool.removeDrawingTool(index);
+                this.handleStateChange(toolConfig.name?.replace('dt_', '') || 'unknown', STATE.DRAWING_TOOLS_DELETE, {
+                    pxthickness: toolConfig.lineStyle?.thickness ? `${toolConfig.lineStyle.thickness}px` : undefined,
+                    color_name: toolConfig.lineStyle?.color ? `${intToHexColor(Number(toolConfig.lineStyle.color)).replace('#', '')}` : undefined,
+                });
+              
             }
             /// Log the event
             if (index && config) {
@@ -444,5 +523,12 @@ export default class DrawToolsStore {
         if (props.drawingToolFloatingMenuPosition) {
             this.updateFloatingMenuPosition(props.drawingToolFloatingMenuPosition);
         }
+    };
+
+    handleStateChange = (id: string, type: string, payload?: Record<string, any>) => {
+        this.mainStore.state.stateChange(type, {
+            drawing_tool_name: id,
+            ...(payload ?? {}),
+        });
     };
 }

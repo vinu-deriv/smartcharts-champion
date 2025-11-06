@@ -56,8 +56,23 @@ export default class MenuStore {
         this.setOpen(!this.open);
     }
     handleDialogStatus() {
-        if (this.route === 'indicators') {
-            this.mainStore.state.stateChange(STATE.INDICATORS_MODAL_TOGGLE, {
+        if (this.route === 'indicators' && this.open) {
+            this.mainStore.state.stateChange(STATE.INDICATORS_MODAL_OPEN, {
+                is_open: this.open,
+            });
+        }
+        if (this.route === 'draw-tool' && this.open) {
+            this.mainStore.state.stateChange(STATE.DRAWING_TOOLS_MODAL_OPEN, {
+                is_open: this.open,
+            });
+        }
+        if (this.route === 'chart-title' && this.open) {
+            this.mainStore.state.stateChange(STATE.MARKET_MENUE_MODAL_TOGGLE, {
+                is_open: this.open,
+            });
+        }
+        if (this.route === 'chart-mode' && this.open) {
+            this.mainStore.state.stateChange(STATE.CHART_MODE_MODAL_OPEN, {
                 is_open: this.open,
             });
         }

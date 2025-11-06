@@ -2,8 +2,9 @@ import { observable, action, when, reaction, makeObservable } from 'mobx';
 import { TLanguage, TSettings } from 'src/types';
 import MainStore from '.';
 import Context from '../components/ui/Context';
-import { Languages } from '../Constant';
+import { Languages, STATE, Intervals } from '../Constant';
 import { LogActions, LogCategories, logEvent } from '../utils/ga';
+import { getTimeIntervalName } from '../utils';
 import MenuStore from './MenuStore';
 
 export default class ChartSettingStore {
@@ -279,6 +280,13 @@ export default class ChartSettingStore {
         }
         this.isSmoothChartEnabled = value;
         logEvent(LogCategories.ChartControl, LogActions.ChartSetting, ` ${value ? 'Enable' : 'Disable'} Smooth Chart.`);
+        const chart_type = this.mainStore.chartType.type;
+        const state = this.mainStore.state;
+        this.mainStore.state.stateChange(STATE.CHART_SWITCH_TOGGLE, {
+            enable_smooth_chart: value ? 'enable' : 'disable',
+            chart_type_name: chart_type.id === 'colored_bar' ? chart_type.text : chart_type.text.toLowerCase(),
+            time_interval_name: getTimeIntervalName(state.granularity, Intervals),
+        });
         this.saveSetting();
         // Refresh the chart to apply the new smooth chart setting
         this.mainStore.chart.refreshChart();
