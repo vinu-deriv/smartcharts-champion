@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chart_app/src/interop/js_interop.dart';
 import 'package:deriv_chart/deriv_chart.dart';
-
 /// State and methods of chart web adapter config.
 class DrawingToolModel {
   /// Initialize
@@ -33,17 +32,7 @@ class DrawingToolModel {
 
     // Add listener to the repository to detect when drawing tools are added/removed
     drawingToolsRepo.addListener(_onDrawingToolsRepoChanged);
-    
-    // Initialize previous repository length
-    _previousRepoLength = 0;
   }
-  
-  // Track the previous repository length to detect additions
-  int _previousRepoLength = 0;
-  
-  // Flag to indicate if we're in the initial loading phase
-  // During this phase, we don't want to trigger onToolAdded events
-  bool _isInitialLoading = true;
 
   InteractiveLayerBehaviour interactiveLayerBehaviour =
       InteractiveLayerDesktopBehaviour();
@@ -74,7 +63,6 @@ class DrawingToolModel {
   }
 
   Future<void> _loadSavedDrawingTools() async {
-    _isInitialLoading = true;   
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     drawingToolsRepo.loadFromPrefs(prefs, symbol);
 
@@ -88,9 +76,7 @@ class DrawingToolModel {
       if (drawingToolsJson.isNotEmpty) {
         // Notify JavaScript side that drawing tools have been loaded
         JsInterop.drawingTool?.onLoad?.call(drawingToolsJson);
-        _previousRepoLength = drawingToolsRepo.items.length;
       }
-      _isInitialLoading = false;
     });
   }
 
@@ -143,6 +129,14 @@ class DrawingToolModel {
             // The native repository should automatically save to SharedPreferences
             // Just sync with JavaScript side by calling onLoad with current items
             final List<String> drawingToolsJson = getDrawingToolsRepoItems();
+            
+            // Get the last added drawing tool and inform JavaScript side about it
+            if (drawingToolsRepo.items.isNotEmpty) {
+              final DrawingToolConfig lastAddedTool = drawingToolsRepo.items.last;
+              final String configJson = jsonEncode(lastAddedTool);
+              JsInterop.drawingTool?.onToolAdded?.call(configJson);
+            }
+            
             JsInterop.drawingTool?.onLoad?.call(drawingToolsJson);
 
             // Trigger update to refresh the UI count and display
@@ -156,19 +150,6 @@ class DrawingToolModel {
   void _onDrawingToolsRepoChanged() {
     // Notify JavaScript side when drawing tools repository changes
     // This triggers a refresh of the UI to show the updated drawing tools count
-    if (_previousRepoLength < drawingToolsRepo.items.length) {
-      // Get the newly added tools
-      final List<DrawingToolConfig> newTools = drawingToolsRepo.items.sublist(_previousRepoLength);
-      for (final DrawingToolConfig tool in newTools) {
-        final String toolJson = jsonEncode(tool);
-        
-        // Only notify about new tools if we're not in the initial loading phase
-        if (!_isInitialLoading) {
-          JsInterop.drawingTool?.onToolAdded?.call(toolJson);
-        }
-      }
-    }
-    _previousRepoLength = drawingToolsRepo.items.length;
     JsInterop.drawingTool?.onUpdate?.call();
   }
 
