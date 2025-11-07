@@ -67,7 +67,7 @@ export default class MenuStore {
             });
         }
         if (this.route === 'chart-title' && this.open) {
-            this.mainStore.state.stateChange(STATE.MARKET_MENUE_MODAL_TOGGLE, {
+            this.mainStore.state.stateChange(STATE.MARKET_MENU_MODAL_TOGGLE, {
                 is_open: this.open,
             });
         }
