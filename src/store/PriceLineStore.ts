@@ -31,8 +31,6 @@ export default class PriceLineStore {
     isOverlappingWithPriceLine = false;
     offScreenDirection: keyof typeof DIRECTIONS | null = null;
     disposeDrawReaction?: IReactionDisposer;
-    _dragAnimationFrame?: number;
-    _lastValidTop?: number;
 
     set zIndex(value: string | number | null) {
         if (this._line && value) {
@@ -121,7 +119,7 @@ export default class PriceLineStore {
         if (this._line && subholder) {
             makeElementDraggable(this._line, subholder, {
                 onDragStart: (e: MouseEvent) => exitIfNotisDraggable(e, this._startDrag),
-                onDrag: (e: MouseEvent) => exitIfNotisDraggable(e, ev => this._dragLine(ev, subholder)),
+                onDrag: (e: MouseEvent) => exitIfNotisDraggable(e, e => this._dragLine(e, subholder)),
                 onDragReleased: (e: MouseEvent) => exitIfNotisDraggable(e, this._endDrag),
             });
         }
@@ -149,9 +147,6 @@ export default class PriceLineStore {
     set price(value) {
         if (value !== this._price && !this.isDragging) {
             this._price = value;
-            // Reset last valid top when price changes intentionally
-            // This allows the position to update correctly for new prices
-            this._lastValidTop = undefined;
             this._draw();
             this._emitter.emit(PriceLineStore.EVENT_PRICE_CHANGED, this._price);
         }
@@ -201,20 +196,12 @@ export default class PriceLineStore {
         return realPrice.toString();
     }
 
-    get currentClosePrice(): number {
-        return this.mainStore.chart.currentCloseQuote()?.Close || 0;
-    }
-
     get priceLineWidth() {
         return window.flutterChart?.app.getCurrentTickWidth() || 60;
     }
 
     get overlappedBarrierWidth(): number {
         return 16;
-    }
-
-    get isContractOngoing(): boolean {
-        return this.mainStore.chart.isLive;
     }
 
     _getPrice(quote: number) {
@@ -241,10 +228,10 @@ export default class PriceLineStore {
         if (!this._line) {
             return;
         }
-        const rect = zone.getBoundingClientRect();
-        const newTop = e.clientY - rect.top;
-        const newCenter = newTop + LINE_OFFSET_HEIGHT_HALF;
-        let newPrice = this._priceFromLocation(newCenter);
+        const { top } = zone.getBoundingClientRect();
+        const newTop = e.pageY - top;
+        const newCenter = newTop && newTop + LINE_OFFSET_HEIGHT_HALF;
+        let newPrice = newCenter && this._priceFromLocation(newCenter);
 
         if (typeof this._priceConstrainer === 'function') {
             newPrice = this._priceConstrainer(newPrice);
@@ -277,9 +264,7 @@ export default class PriceLineStore {
     _distanceFromCurrentPrice() {
         return Math.abs(
             this._locationFromPrice(+this.realPrice) -
-                (this.relative
-                    ? this._locationFromPrice(+this.realPrice - (this.isDragging ? +this._dragPrice : +this._price))
-                    : this._locationFromPrice(this.currentClosePrice))
+                this._locationFromPrice(+this.realPrice - (this.isDragging ? +this._dragPrice : +this._price))
         );
     }
 
@@ -292,25 +277,6 @@ export default class PriceLineStore {
 
         // @ts-ignore
         const height = window.flutterChartElement?.clientHeight || 0;
-
-        // Validate the calculated top position to prevent drastic jumps
-        // If the position is invalid (NaN, Infinity, or unreasonable), return current position
-        if (!Number.isFinite(top) || height === 0) {
-            return this.__top;
-        }
-
-        // Prevent drastic jumps during screen resize/responsive changes
-        // If the position change is too large (more than chart height), it's likely a coordinate mismatch
-        // This happens when quoteBounds update before Flutter chart's coordinate system is ready
-        if (this._lastValidTop !== undefined && !this.isDragging) {
-            const maxReasonableJump = height * 0.8; // Allow max 80% of screen height jump
-            const positionDelta = Math.abs(top - this._lastValidTop);
-
-            if (positionDelta > maxReasonableJump && height > 0) {
-                // Skip this update as it's likely due to coordinate system mismatch
-                return this._lastValidTop;
-            }
-        }
 
         // keep line on chart even if price is off viewable area:
         if (top < 0) {
@@ -345,10 +311,7 @@ export default class PriceLineStore {
             this.isOverlapping = this.overlapCheck(top);
         }
 
-        this.isOverlappingWithPriceLine = this.isContractOngoing && this._distanceFromCurrentPrice() < 25;
-
-        // Store this as the last valid position for jump detection
-        this._lastValidTop = top;
+        this.isOverlappingWithPriceLine = this._distanceFromCurrentPrice() < 25;
 
         return Math.round(top) | 0;
     };
