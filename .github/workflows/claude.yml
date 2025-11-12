@@ -1,4 +1,5 @@
 # Claude Code Assistant Workflow
+# This GitHub Actions workflow uses the Claude Code Action to review pull requests.
 name: Claude Code Assistant
 
 on:
