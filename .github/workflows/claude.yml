@@ -23,34 +23,11 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Security Check - Validate User Access
-        run: |
-          ACTOR="${{ github.actor }}"
-          echo "Validating access for user: $ACTOR"
-          
-          # Check if user is organization member
-          MEMBERSHIP_STATUS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/deriv-com/members/$ACTOR" \
-            -w "%{http_code}" -o /dev/null)
-          
-          if [[ "$MEMBERSHIP_STATUS" == "204" ]]; then
-            echo "✅ User $ACTOR is a verified organization member"
-            exit 0
-          fi
-          
-          # Check if user is repository collaborator
-          COLLABORATOR_STATUS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/collaborators/$ACTOR" \
-            -w "%{http_code}" -o /dev/null)
-          
-          if [[ "$COLLABORATOR_STATUS" == "204" ]]; then
-            echo "✅ User $ACTOR is a verified repository collaborator"
-            exit 0
-          fi
-          
-          echo "❌ Access denied for user: $ACTOR"
-          echo "Only organization members and repository collaborators can trigger Claude actions."
-          exit 1
+      - name: Verify user
+              uses: 'deriv-com/shared-actions/.github/actions/verify_user_in_organization@v3'
+              with:
+                  username: ${{ github.event.pull_request.user.login }}
+                  token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       # Ensure we have a real git repo at the PR HEAD (works for forks)
       - name: Checkout PR head
