@@ -51,7 +51,7 @@ export default class ChartSettingStore {
         this.menuStore = new MenuStore(mainStore, { route: 'setting' });
         
         // Load smooth chart setting from localStorage
-        const savedSmoothChart = localStorage.getItem('isSmoothChartEnabled');
+        const savedSmoothChart = localStorage.getItem('is_smooth_chart_enabled');
         if (savedSmoothChart !== null) {
             this.isSmoothChartEnabled = savedSmoothChart === 'true';
         }
@@ -287,7 +287,7 @@ export default class ChartSettingStore {
         this.isSmoothChartEnabled = value;
         
         // Save to localStorage
-        localStorage.setItem('isSmoothChartEnabled', value.toString());
+        localStorage.setItem('is_smooth_chart_enabled', value.toString());
         
         logEvent(LogCategories.ChartControl, LogActions.ChartSetting, ` ${value ? 'Enable' : 'Disable'} Smooth Chart.`);
         const chart_type = this.mainStore.chartType.type;
