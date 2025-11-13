@@ -49,6 +49,12 @@ export default class ChartSettingStore {
         this.defaultLanguage = this.languages[0];
         this.mainStore = mainStore;
         this.menuStore = new MenuStore(mainStore, { route: 'setting' });
+        
+        // Load smooth chart setting from localStorage
+        const savedSmoothChart = localStorage.getItem('isSmoothChartEnabled');
+        if (savedSmoothChart !== null) {
+            this.isSmoothChartEnabled = savedSmoothChart === 'true';
+        }
         // below reaction is updating the symbols and those elements that are not updating automatically on language change.
         reaction(
             () => (this?.language as TLanguage)?.key,
@@ -279,6 +285,10 @@ export default class ChartSettingStore {
             return;
         }
         this.isSmoothChartEnabled = value;
+        
+        // Save to localStorage
+        localStorage.setItem('isSmoothChartEnabled', value.toString());
+        
         logEvent(LogCategories.ChartControl, LogActions.ChartSetting, ` ${value ? 'Enable' : 'Disable'} Smooth Chart.`);
         const chart_type = this.mainStore.chartType.type;
         const state = this.mainStore.state;

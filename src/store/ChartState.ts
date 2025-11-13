@@ -149,6 +149,11 @@ class ChartState {
         this.mainStore = mainStore;
         this.chartStore = mainStore.chart;
         when(() => !!this.context, this.onContextReady);
+        
+        // Save layout before page unload (refresh)
+        window.addEventListener('beforeunload', () => {
+            this.saveLayout();
+        });
         reaction(
             () => this.allowTickChartTypeOnly,
             allowTickChartTypeOnly => {
@@ -513,6 +518,7 @@ class ChartState {
     restoreLayout() {
         const id = this.mainStore.chart.chartId;
         const compressedLayout = createObjectFromLocalStorage(`chart-layout-${id}`);
+        
         let layout: TLayout | null = null;
         try {
             layout = JSON.parse(LZString.decompress(compressedLayout ?? ''));
