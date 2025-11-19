@@ -182,6 +182,32 @@ export default class ChartSettingStore {
         }
         if (updatedLanguage !== this.mainStore.chart.currentLanguage) {
             this.mainStore.chart.currentLanguage = updatedLanguage;
+            
+            // Save the layout to ensure drawing tools are preserved
+            this.mainStore.state.saveLayout();
+            
+            // Force reload of drawing tools from Flutter side
+            // This triggers the _loadSavedDrawingTools method in drawing_tool.dart
+            setTimeout(() => {
+                // First get the current symbol
+                const symbol = this.mainStore.chart.currentActiveSymbol?.symbol;
+                if (symbol) {
+                    // Create a new chart payload to trigger the drawing tool reload
+                    window.flutterChart?.app.newChart({
+                        symbol,
+                        granularity: this.mainStore.chartAdapter.getGranularityInMs(),
+                        chartType: this.mainStore.state.chartType,
+                        isLive: this.mainStore.chart.isLive || false,
+                        startWithDataFitMode: this.mainStore.chartAdapter.isDataFitModeEnabled,
+                        theme: this.theme,
+                        msPerPx: this.mainStore.chartAdapter.msPerPx,
+                        pipSize: this.mainStore.chart.pip,
+                        isMobile: this.mainStore.chart.isMobile || false,
+                        isSmoothChartEnabled: this.isSmoothChartEnabled,
+                        yAxisMargin: this.mainStore.state.yAxisMargin,
+                    });
+                }
+            }, 100);
         }
         this.saveSetting();
     }
