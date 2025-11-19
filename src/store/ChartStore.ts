@@ -483,6 +483,12 @@ class ChartStore {
         if (symbolObj) {
             this.updateCurrentActiveSymbol(symbolObj);
         }
+        
+        // If language has changed, reload drawing tools from localStorage
+        if (isLanguageChanged) {
+            // Get the drawing tools from localStorage via the state's restoreLayout method
+            this.state?.restoreLayout();
+        }
     }
     // Calling newChart with symbolObj as undefined refreshes the chart
     newChart(symbolObj = this.currentActiveSymbol) {
