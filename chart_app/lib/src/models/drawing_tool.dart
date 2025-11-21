@@ -57,7 +57,7 @@ class DrawingToolModel {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // TODO(Jim): Find a better way to ensure the chart is ready
       // Wait for chart initialization to complete
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 5000));
       await _loadSavedDrawingTools();
     });
   }
@@ -70,7 +70,7 @@ class DrawingToolModel {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // TODO(Jim): Find a better way to ensure the chart is ready
       // Add a delay to ensure the chart is fully initialized and ready to render
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       final List<String> drawingToolsJson = getDrawingToolsRepoItems();
       if (drawingToolsJson.isNotEmpty) {
