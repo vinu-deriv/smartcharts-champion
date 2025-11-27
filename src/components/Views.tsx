@@ -41,7 +41,7 @@ type TActiveListViewProps = {
     onGranularity: (granularity?: TGranularity) => void;
 };
 
-const ViewItem = ({ disabled, view, remove, onClick }: TViewItemProps) => (
+const ViewItem = ({ disabled=false, view, remove, onClick }: TViewItemProps) => (
     <Tooltip
         className='sc-views__views__list__item'
         onClick={disabled ? undefined : onClick}
@@ -52,10 +52,6 @@ const ViewItem = ({ disabled, view, remove, onClick }: TViewItemProps) => (
         <DeleteIcon onClick={remove} />
     </Tooltip>
 );
-
-ViewItem.defaultProps = {
-    disabled: false,
-};
 
 const EmptyView = ({ onClick }: { onClick: (event: React.MouseEvent<HTMLElement>) => void }) => (
     <div className='sc-views--empty'>
