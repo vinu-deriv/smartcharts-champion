@@ -5,7 +5,7 @@ import '../../sass/components/_bottom-widget-container.scss';
 
 const BottomWidgetsContainer = ({ children }: { children?: React.ReactNode }) => {
     const { bottomWidgetsContainer } = useStores();
-    const { bottom, isReadyToShow } = bottomWidgetsContainer;
+    const { bottom = 0, isReadyToShow = false } = bottomWidgetsContainer;
 
     if (!isReadyToShow) {
         return null;
@@ -20,12 +20,6 @@ const BottomWidgetsContainer = ({ children }: { children?: React.ReactNode }) =>
             {children}
         </div>
     );
-};
-
-BottomWidgetsContainer.defaultProps = {
-    bottom: 0,
-    isReadyToShow: false,
-    top: 0,
 };
 
 export default observer(BottomWidgetsContainer);
