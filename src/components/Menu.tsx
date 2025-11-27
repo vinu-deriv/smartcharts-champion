@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { CSSTransition } from 'react-transition-group';
 import classNames from 'classnames';
 import MenuStore from 'src/store/MenuStore';
+import DialogStore from 'src/store/DialogStore';
 import { useStores } from 'src/store';
 import MenuMobile from './MenuMobile';
 import Tooltip from './Tooltip';
@@ -188,7 +189,7 @@ const DialogWithTransition = ({
     children,
 }: {
     dialogStatus: boolean;
-    dialogStore: any;
+    dialogStore: DialogStore;
     title?: string;
     handleCloseDialog?: () => void;
     enableTabular?: boolean;

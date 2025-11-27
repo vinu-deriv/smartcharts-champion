@@ -56,4 +56,7 @@ const Dialog = forwardRef<HTMLDivElement, TDialogProps>((
     );
 });
 
+// Add display name for forwardRef component to fix React DevTools warning
+Dialog.displayName = 'Dialog';
+
 export default observer(Dialog);
