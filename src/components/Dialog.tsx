@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, forwardRef } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import DialogStore from 'src/store/DialogStore';
@@ -16,16 +16,19 @@ export type TDialogProps = {
     children?: React.ReactNode;
 };
 
-const Dialog = ({
-    store,
-    children,
-    className = '',
-    title,
-    customHead,
-    enableTabular = false,
-    handleOverlayClick,
-    handleCloseDialog,
-}: TDialogProps) => {
+const Dialog = forwardRef<HTMLDivElement, TDialogProps>((
+    {
+        store,
+        children,
+        className = '',
+        title,
+        customHead,
+        enableTabular = false,
+        handleOverlayClick,
+        handleCloseDialog,
+    }, 
+    ref
+) => {
     const { updateCloseCallback, onContainerClick, updateOutsideClickCallback } = store;
 
     useEffect(() => {
@@ -35,6 +38,7 @@ const Dialog = ({
 
     return (
         <div
+            ref={ref}
             className={classNames('sc-dialog', className, { 'sc-dialog--tabular': enableTabular })}
             onClick={onContainerClick}
         >
@@ -50,6 +54,6 @@ const Dialog = ({
             <div className='sc-dialog__body'>{children}</div>
         </div>
     );
-};
+});
 
 export default observer(Dialog);
