@@ -122,20 +122,22 @@ class ChartConfigModel extends ChangeNotifier {
       markerGroupList.add(
         MarkerGroup(
           markers,
-          direction: MarkerDirection.values
-                .byName(_markerGroup.direction ?? 'up'),
+          direction:
+              MarkerDirection.values.byName(_markerGroup.direction ?? 'up'),
           type: _markerGroup.type,
           style: MarkerStyle(
             backgroundColor: _bgColor,
           ),
           props: MarkerProps(
             hasPersistentBorders:
-                _getProperty(_markerGroup.props, 'hasPersistentBorders'),
-            isProfit: _getProperty(_markerGroup.props, 'isProfit'),
-            isRunning: _getProperty(_markerGroup.props, 'isRunning'),
+                _getProperty(_markerGroup.props, 'hasPersistentBorders') ??
+                    false,
+            isProfit: _getProperty(_markerGroup.props, 'isProfit') ?? true,
+            isRunning: _getProperty(_markerGroup.props, 'isRunning') ?? true,
             markerLabel: _getProperty(_markerGroup.props, 'markerLabel'),
             contractMarkerLeftPadding:
-                _getProperty(_markerGroup.props, 'contractMarkerLeftPadding'),
+                _getProperty(_markerGroup.props, 'contractMarkerLeftPadding') ??
+                    8,
           ),
           currentEpoch: _markerGroup.currentEpoch,
           profitAndLossText: _markerGroup.profitAndLossText,
