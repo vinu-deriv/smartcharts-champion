@@ -1,5 +1,3 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { useStores } from 'src/store';
@@ -30,7 +28,7 @@ const TypeMap = {
     hollow: TypeHollowGrayscaleIcon,
 };
 
-const ChartMode = ({ onChartType, onGranularity, portalNodeId }: TChartModeProps) => {
+const ChartMode = ({ onChartType, onGranularity, portalNodeId = '' }: TChartModeProps) => {
     const { chart, chartMode, chartType, timeperiod, state, chartSetting } = useStores();
     const { menuStore } = chartMode;
     const { allowTickChartTypeOnly } = state;
@@ -89,10 +87,6 @@ const ChartMode = ({ onChartType, onGranularity, portalNodeId }: TChartModeProps
             </Menu.Body>
         </Menu>
     );
-};
-
-ChartMode.defaultProps = {
-    portalNodeId: '',
 };
 
 export default observer(ChartMode);

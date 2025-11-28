@@ -74,7 +74,7 @@
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
         "@types/react-tabs": "^2.3.2",
-        "@types/react-transition-group": "^4.4.1",
+        "@types/react-transition-group": "^4.4.5",
         "@types/sinon": "^10.0.2",
         "@types/sinon-chai": "^3.2.6",
         "@typescript-eslint/eslint-plugin": "^4.28.0",
@@ -161,7 +161,7 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-tabs": "^6.0.2",
-        "react-transition-group": "^4.4.1",
+        "react-transition-group": "^4.4.5",
         "robust-websocket": "^1.0.0",
         "sinon-chai": "^3.7.0",
         "url-search-params-polyfill": "^7.0.0"

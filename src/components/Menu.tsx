@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { CSSTransition } from 'react-transition-group';
 import classNames from 'classnames';
 import MenuStore from 'src/store/MenuStore';
+import DialogStore from 'src/store/DialogStore';
 import { useStores } from 'src/store';
 import MenuMobile from './MenuMobile';
 import Tooltip from './Tooltip';
@@ -14,6 +15,7 @@ type TMenuProps = {
     store: MenuStore;
     className?: string;
     title?: string;
+    // eslint-disable-next-line react/no-unused-prop-types
     isFullscreen?: boolean;
     portalNodeId?: string;
     enabled?: boolean;
@@ -80,18 +82,17 @@ const Menu = ({
                         })}
                     >
                         <div className='cq-modal__overlay' onClick={onOverlayClick}>
-                            <CSSTransition appear in={dialogStatus} timeout={300} classNames='sc-dialog' unmountOnExit>
-                                <Dialog
-                                    store={dialogStore}
-                                    title={title}
-                                    handleCloseDialog={handleCloseDialog}
-                                    enableTabular={enableTabular}
-                                    customHead={customHead}
-                                    handleOverlayClick={handleOverlayClick}
-                                >
-                                    {rest}
-                                </Dialog>
-                            </CSSTransition>
+                            <DialogWithTransition
+                                dialogStatus={dialogStatus}
+                                dialogStore={dialogStore}
+                                title={title}
+                                handleCloseDialog={handleCloseDialog}
+                                enableTabular={enableTabular}
+                                customHead={customHead}
+                                handleOverlayClick={handleOverlayClick}
+                            >
+                                {rest}
+                            </DialogWithTransition>
                         </div>
                     </div>
                 </div>
@@ -176,8 +177,54 @@ const Menu = ({
     );
 };
 
+// Helper component to handle CSSTransition with nodeRef
+const DialogWithTransition = ({
+    dialogStatus,
+    dialogStore,
+    title,
+    handleCloseDialog,
+    enableTabular,
+    customHead,
+    handleOverlayClick,
+    children,
+}: {
+    dialogStatus: boolean;
+    dialogStore: DialogStore;
+    title?: string;
+    handleCloseDialog?: () => void;
+    enableTabular?: boolean;
+    customHead?: React.ReactElement;
+    handleOverlayClick?: () => void;
+    children?: React.ReactNode;
+}) => {
+    const nodeRef = React.useRef(null);
+    
+    return (
+        <CSSTransition 
+            appear 
+            in={dialogStatus} 
+            timeout={300} 
+            classNames='sc-dialog' 
+            unmountOnExit
+            nodeRef={nodeRef}
+        >
+            <Dialog
+                ref={nodeRef}
+                store={dialogStore}
+                title={title}
+                handleCloseDialog={handleCloseDialog}
+                enableTabular={enableTabular}
+                customHead={customHead}
+                handleOverlayClick={handleOverlayClick}
+            >
+                {children}
+            </Dialog>
+        </CSSTransition>
+    );
+};
+
 const MenuSubComponent = ({ children }: { children?: React.ReactNode }) => {
-    return <React.Fragment>{children}</React.Fragment>;
+    return <>{children}</>;
 };
 
 Menu.Title = MenuSubComponent;
