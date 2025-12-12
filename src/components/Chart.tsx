@@ -31,7 +31,7 @@ const Chart = React.forwardRef<
     { hasPredictionIndicators(): boolean; triggerPopup(cancelCallback: () => void): void },
     TChartProps
 >((props, ref) => {
-    const { chart, drawTools, studies, chartSetting, chartType, state, loader, chartAdapter, timeperiod } =
+    const { chart, drawTools, studies, chartSetting, chartType, state, loader, chartAdapter, timeperiod, crosshair } =
         useStores();
     const { chartId, init, destroy, isChartAvailable, chartContainerHeight, containerWidth } = chart;
     const { settingsDialog: studiesSettingsDialog, restoreStudies, activeItems } = studies;
@@ -70,6 +70,12 @@ const Chart = React.forwardRef<
         logPageView();
         updateProps(props);
         init(rootRef.current, props);
+
+        // Handle crosshair prop to set initial state without persistence
+        // crosshair=0 means disabled
+        if (props.crosshair !== undefined) {
+            crosshair.setInitialEnabledState(props.crosshair !== 0);
+        }
 
         return () => {
             destroy();
@@ -178,9 +184,7 @@ const Chart = React.forwardRef<
                                                 : chartContainerHeight,
                                     }}
                                 />
-                                {enabledNavigationWidget && (
-                                    <NavigationWidget />
-                                )}
+                                {enabledNavigationWidget && <NavigationWidget />}
                                 {ToolbarWidget && <ToolbarWidget />}
                                 {!isChartAvailable && (
                                     <div className='cq-chart-unavailable'>
