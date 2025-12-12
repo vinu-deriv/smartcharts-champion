@@ -68,14 +68,15 @@ const Chart = React.forwardRef<
     React.useEffect(() => {
         initGA();
         logPageView();
-        updateProps(props);
-        init(rootRef.current, props);
 
-        // Handle crosshair prop to set initial state without persistence
+        // Set crosshair state BEFORE chart initialization
         // crosshair=0 means disabled
         if (props.crosshair !== undefined) {
             crosshair.setInitialEnabledState(props.crosshair !== 0);
         }
+
+        updateProps(props);
+        init(rootRef.current, props);
 
         return () => {
             destroy();
