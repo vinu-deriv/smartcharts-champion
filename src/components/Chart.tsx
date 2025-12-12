@@ -70,9 +70,8 @@ const Chart = React.forwardRef<
         logPageView();
 
         // Set crosshair state BEFORE chart initialization
-        // crosshair=0 means disabled
-        if (props.crosshair !== undefined) {
-            crosshair.setInitialEnabledState(props.crosshair !== 0);
+        if (props.crosshairEnabled !== undefined) {
+            crosshair.setInitialEnabledState(props.crosshairEnabled);
         }
 
         updateProps(props);
