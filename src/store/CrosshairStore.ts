@@ -20,11 +20,15 @@ class CrosshairStore {
         this.mainStore = mainStore;
 
         // Load crosshair enabled state from localStorage
-        if (typeof window !== 'undefined' && window.localStorage) {
-            const savedCrosshairEnabled = localStorage.getItem(CROSSHAIR_ENABLED_KEY);
-            if (savedCrosshairEnabled !== null) {
-                this.isEnabled = savedCrosshairEnabled === 'true';
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                const savedCrosshairEnabled = localStorage.getItem(CROSSHAIR_ENABLED_KEY);
+                if (savedCrosshairEnabled !== null) {
+                    this.isEnabled = savedCrosshairEnabled === 'true';
+                }
             }
+        } catch {
+            // Continue with default value
         }
 
         // Sync crosshair state with Flutter chart when it's loaded
@@ -45,8 +49,12 @@ class CrosshairStore {
         this.mainStore.chartAdapter.flutterChart?.config.updateCrosshairVisibility(this.isFunctionallyActive);
 
         // Save to localStorage only if persistence is enabled
-        if (this.shouldPersist && typeof window !== 'undefined' && window.localStorage) {
-            localStorage.setItem(CROSSHAIR_ENABLED_KEY, enabled.toString());
+        try {
+            if (this.shouldPersist && typeof window !== 'undefined' && window.localStorage) {
+                localStorage.setItem(CROSSHAIR_ENABLED_KEY, enabled.toString());
+            }
+        } catch {
+            // Silently fail - state is still updated in memory
         }
 
         // Track crosshair click event
