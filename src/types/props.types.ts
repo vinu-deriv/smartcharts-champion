@@ -271,6 +271,7 @@ export type TChartProps = {
     startWithDataFitMode?: boolean;
     leftMargin?: number;
     drawingToolFloatingMenuPosition?: TFloatingMenuPositionOffset;
+    crosshairEnabled?: boolean; // Initial crosshair state. When set, overrides localStorage and doesn't persist.
 };
 
 export type TQuote = {
