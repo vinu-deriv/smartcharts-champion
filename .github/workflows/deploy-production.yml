@@ -17,7 +17,7 @@ concurrency:
 env:
   FLUTTER_VERSION: '3.24.1'
   FLUTTER_WEB_RENDERER: 'html'
-  NODE_VERSION: '20.x'
+  NODE_VERSION: '22.x'
 permissions:
   contents: read
 jobs:
