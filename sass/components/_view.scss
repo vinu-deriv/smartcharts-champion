@@ -104,13 +104,14 @@
         display: flex;
         flex-direction: column;
         padding: 24px;
-        justify-content: center;
+        justify-content: end;
         align-content: center;
         text-align: center;
+        height: 100%;
 
         > .ic-icon {
             width: 130px;
-            height: 130px;
+            height: 80px;
             margin: 0 auto 24px;
         }
         p {

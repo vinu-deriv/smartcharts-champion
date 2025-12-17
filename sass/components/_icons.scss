@@ -152,7 +152,12 @@
     .ic-indices > svg {
         stroke: none !important;
     }
+    &-light {
+        --empty-state-icon: #000000;
+    }
     &-dark {
+        --empty-state-icon: #ffffff;
+
         .ic-cryptocurrency > svg,
         .ic-indices > svg {
             filter: brightness(3);
