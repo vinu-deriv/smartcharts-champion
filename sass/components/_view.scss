@@ -18,7 +18,13 @@
             height: 40px;
             text-align: left;
             @include themify($themes) {
-                color: themed('TemplateFormInputText');
+                color: themed('DefaultText');
+            }
+
+            &::placeholder {
+                @include themify($themes) {
+                    color: themed('TemplateFormInputText');
+                }
             }
         }
         .subtitle {
