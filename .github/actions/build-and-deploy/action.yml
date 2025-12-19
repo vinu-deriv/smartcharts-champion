@@ -63,7 +63,7 @@ runs:
       run: |
         cd chart_app
         flutter pub get
-        flutter build web --web-renderer "$FLUTTER_WEB_RENDERER" --release --no-tree-shake-icons
+        flutter build web --web-renderer "$FLUTTER_WEB_RENDERER" --release
         cd ..
 
     - name: Build application
