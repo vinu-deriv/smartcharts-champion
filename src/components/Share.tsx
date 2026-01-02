@@ -32,6 +32,11 @@ const Share = ({ portalNodeId }: TShareProps) => {
             </Menu.Title>
             <Menu.Body>
                 <div className='sc-download'>
+                    <p className='sc-download__description'>
+                        {t.translate(
+                            'Download your current chart view as a PNG or export the historical data for analysis as a CSV.'
+                        )}
+                    </p>
                     <InlineLoader className='sc-download__item' onClick={downloadPNG} enabled={isLoadingPNG}>
                         <PngIcon />
                         <span className='sc-download__item__label'> {t.translate('PNG')} </span>
