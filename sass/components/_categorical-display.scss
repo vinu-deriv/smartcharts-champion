@@ -367,9 +367,9 @@
                     color: themed('DefaultMain');
                 }
             }
-            &:hover .ciq-favorite svg {
+            .ciq-favorite:not(.ciq-active-favorite) svg {
                 @include themify($themes) {
-                    stroke: themed('MenuIcon') !important;
+                    stroke: themed('DefaultMain') !important;
                 }
             }
         }
