@@ -434,6 +434,20 @@ export default class CategoricalDisplayStore {
         const activeMarketClassName = `${activeSubCategoryClassName} .sc-mcd__item--${this.activeMarket}`;
         const el_active_market: HTMLElement | null | undefined = this.scrollPanel?.querySelector(activeMarketClassName);
 
+        // Remove previous market-selected class and add to current active item
+        this.scrollPanel?.querySelectorAll('.sc-mcd__item--market-selected').forEach(element => {
+            element.classList.remove('sc-mcd__item--market-selected');
+        });
+
+        if (this.activeSubCategory && this.activeCategoryKey) {
+            const activeItem = this.scrollPanel?.querySelector(
+                `.sc-mcd__category--${this.activeCategoryKey} .sc-mcd__item--${this.activeSubCategory}`
+            );
+            if (activeItem) {
+                activeItem.classList.add('sc-mcd__item--market-selected');
+            }
+        }
+
         this.activeHeadKey = this.activeCategoryKey || null;
         this.pauseScrollSpy = true;
         this.isUserScrolling = false;

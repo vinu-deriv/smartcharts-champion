@@ -359,6 +359,20 @@
                 }
             }
         }
+        &--market-selected {
+            &,
+            &:hover {
+                @include themify($themes) {
+                    background-color: themed('CatDisplayCatActiveContentSelectedBg');
+                    color: themed('DefaultMain');
+                }
+            }
+            &:hover .ciq-favorite svg {
+                @include themify($themes) {
+                    stroke: themed('MenuIcon') !important;
+                }
+            }
+        }
     }
     &--nested {
         #{ $self }__category {
