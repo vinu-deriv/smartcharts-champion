@@ -363,13 +363,7 @@
             &,
             &:hover {
                 @include themify($themes) {
-                    background-color: themed('CatDisplayCatActiveContentSelectedBg');
-                    color: themed('DefaultMain');
-                }
-            }
-            .ciq-favorite:not(.ciq-active-favorite) svg {
-                @include themify($themes) {
-                    stroke: themed('DefaultMain') !important;
+                    background-color: themed('DropdownActiveBg') !important;
                 }
             }
         }
