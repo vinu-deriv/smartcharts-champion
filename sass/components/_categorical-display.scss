@@ -359,6 +359,15 @@
                 }
             }
         }
+        &--market-selected {
+            &,
+            &:hover {
+                @include themify($themes) {
+                    background-color: themed('DropdownActiveBg') !important;
+                    color: themed('DropdownActiveText') !important;
+                }
+            }
+        }
     }
     &--nested {
         #{ $self }__category {
