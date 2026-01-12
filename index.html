@@ -61,7 +61,14 @@
         <script src="./dist/react-transition-group.js?9b682109"></script>
         <script src="./dist/mobx.js?6f2cbcb7"></script>
         <script src="./dist/mobx-react-lite.js?bc84f63e"></script>
-        <script src="./dist/moment.js?72efd6e7"></script>
+        <script src="./dist/dayjs.js"></script>
+        <script src="./dist/dayjs-plugin-utc.js"></script>
+        <script>
+            // Extend dayjs with the UTC plugin for browser UMD loading
+            if (window.dayjs && window.dayjs_plugin_utc) {
+                window.dayjs.extend(window.dayjs_plugin_utc);
+            }
+        </script>
         <script src="./dist/smartcharts.js?35f70cdb"></script>
     </body>
 </html>

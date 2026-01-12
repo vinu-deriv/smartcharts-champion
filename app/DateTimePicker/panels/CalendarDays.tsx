@@ -1,7 +1,7 @@
 /* eslint-disable react/no-array-index-key */
 import classNames from 'classnames';
-import moment from 'moment';
 import React from 'react';
+import dayjs from '../../../src/utils/dayjs-config';
 
 type TCalendarProps = {
     date_format: string;
@@ -37,33 +37,33 @@ const getDays = ({
 }: TCalendarProps) => {
     const dates = [];
     const days: React.ReactElement[] = [];
-    const moment_today = moment().utc().startOf('day');
-    const moment_cur_date = moment.utc(calendar_date);
+    const moment_today = dayjs().utc().startOf('day');
+    const moment_cur_date = dayjs.utc(calendar_date);
     const num_of_days = moment_cur_date.daysInMonth() + 1;
-    const moment_month_start = moment_cur_date.clone().startOf('month');
-    const moment_month_end = moment_cur_date.clone().endOf('month');
-    const first_day = calcDayIndexFromMonday(moment_month_start.day()); // moment.js method '.day()' return index the day of the week, with Sunday as 0 and Saturday as 6.
+    const moment_month_start = moment_cur_date.startOf('month');
+    const moment_month_end = moment_cur_date.endOf('month');
+    const first_day = calcDayIndexFromMonday(moment_month_start.day()); // dayjs method '.day()' return index the day of the week, with Sunday as 0 and Saturday as 6.
     const last_day = calcDayIndexFromMonday(moment_month_end.day());
-    const moment_min_date = moment.utc(min_date);
-    const moment_max_date = moment.utc(max_date);
-    const moment_selected = moment.utc(selected_date);
+    const moment_min_date = dayjs.utc(min_date);
+    const moment_max_date = dayjs.utc(max_date);
+    const moment_selected = dayjs.utc(selected_date);
 
     for (let i = first_day; i > 0; i--) {
-        dates.push(moment_month_start.clone().subtract(i, 'day').format(date_format));
+        dates.push(moment_month_start.subtract(i, 'day').format(date_format));
     }
     for (let idx = 1; idx < num_of_days; idx += 1) {
-        dates.push(moment_cur_date.clone().format(date_format.replace('DD', padLeft(idx, 2, '0'))));
+        dates.push(moment_cur_date.format(date_format.replace('DD', padLeft(idx, 2, '0'))));
     }
     for (let i = 1; i <= 6 - last_day; i++) {
-        dates.push(moment_month_end.clone().add(i, 'day').format(date_format));
+        dates.push(moment_month_end.add(i, 'day').format(date_format));
     }
 
-    const moment_start_date = moment
+    const moment_start_date = dayjs
         .unix(start_date || 0)
         .utc()
         .startOf('day');
     dates.map(date => {
-        const moment_date = moment.utc(date).startOf('day');
+        const moment_date = dayjs.utc(date).startOf('day');
         const is_active = selected_date && moment_date.isSame(moment_selected);
         const is_today = moment_date.isSame(moment_today, 'day');
         const is_disabled: boolean =
@@ -71,8 +71,7 @@ const getDays = ({
             moment_date.isAfter(moment_max_date) ||
             // for forward starting accounts, only show same day as start date and the day after
             (start_date
-                ? moment_date.isBefore(moment_start_date) ||
-                  moment_date.isAfter(moment_start_date.clone().add(1, 'day'))
+                ? moment_date.isBefore(moment_start_date) || moment_date.isAfter(moment_start_date.add(1, 'day'))
                 : false);
 
         const is_other_month = moment_date.month() !== moment_cur_date.month();

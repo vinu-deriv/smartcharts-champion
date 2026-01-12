@@ -17,7 +17,7 @@ import {
 } from '@deriv-com/smartcharts'; // eslint-disable-line import/no-unresolved
 import whyDidYouRender from '@welldone-software/why-did-you-render';
 import { configure } from 'mobx';
-import moment from 'moment';
+import dayjs from '../src/utils/dayjs-config';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { TNotification } from 'src/store/Notifier';
@@ -77,7 +77,7 @@ const chartId = '1';
 const appId = localStorage.getItem('config.app_id') || 12812;
 const serverUrl = getServerUrl();
 const language = new URLSearchParams(window.location.search).get('l') || getLanguageStorage();
-const today = moment().format('YYYY/MM/DD 00:00');
+const today = dayjs().format('YYYY/MM/DD 00:00');
 const connectionManager = new ConnectionManager({
     appId,
     language,
@@ -503,7 +503,7 @@ const App = () => {
             {endEpoch ? (
                 <Marker className='chart-marker-historical' markerRef={onMarkerRef}>
                     <span>
-                        {moment(endEpoch * 1000)
+                        {dayjs(endEpoch * 1000)
                             .utc()
                             .format('DD MMMM YYYY - HH:mm')}
                     </span>

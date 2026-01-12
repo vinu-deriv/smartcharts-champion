@@ -1,7 +1,7 @@
 /* eslint-disable prefer-rest-params */
 /* eslint-disable @typescript-eslint/no-this-alias */
 import { action, computed, observable, reaction, makeObservable } from 'mobx';
-import moment from 'moment';
+import dayjs from '../utils/dayjs-config';
 import MainStore from '.';
 import { BinaryAPI, TradingTimes } from '../binaryapi';
 import { TProcessedSymbolItem } from '../types/active-symbols.types';
@@ -443,7 +443,7 @@ class ChartStore {
     
     onServerTimeChange() {
         if (this.tradingTimes?._serverTime) {
-            this.serverTime = moment(this.tradingTimes._serverTime.getEpoch() * 1000).format(
+            this.serverTime = dayjs(this.tradingTimes._serverTime.getEpoch() * 1000).format(
                 'DD MMM YYYY HH:mm:ss [GMT]'
             );
         }

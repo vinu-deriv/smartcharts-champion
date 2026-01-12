@@ -1,5 +1,5 @@
 import React from 'react';
-import moment from 'moment';
+import dayjs from '../src/utils/dayjs-config';
 import DatePicker from './DateTimePicker/DatePicker';
 import TimePicker from './DateTimePicker/TimePicker';
 import './chart-history.scss';
@@ -9,7 +9,7 @@ type TChartHistoryProps = {
 };
 
 const ChartHistory = React.memo(({ onChange }: TChartHistoryProps) => {
-    const [date, setDate] = React.useState(moment().format('YYYY/MM/DD'));
+    const [date, setDate] = React.useState(dayjs().format('YYYY/MM/DD'));
     const [focusOnDate, setFocusOnDate] = React.useState(false);
     const [focusOnTime, setFocusOnTime] = React.useState(false);
     const [time, setTime] = React.useState('00:00');
@@ -56,8 +56,8 @@ const ChartHistory = React.memo(({ onChange }: TChartHistoryProps) => {
                     has_today_btn
                     value={date}
                     onChange={onChangeDate}
-                    min_date={moment.utc().subtract(1, 'years').toDate().toString()}
-                    max_date={moment.utc().toDate().toString()}
+                    min_date={dayjs.utc().subtract(1, 'years').toDate().toString()}
+                    max_date={dayjs.utc().toDate().toString()}
                     display_format='DD MMM YYYY'
                 />
                 <TimePicker
@@ -65,7 +65,7 @@ const ChartHistory = React.memo(({ onChange }: TChartHistoryProps) => {
                     name='time'
                     focus={focusOnTime}
                     disableFocus={onDisableFocus}
-                    start_date={moment(date, 'YYYY/MM/DD').valueOf() / 1000}
+                    start_date={dayjs(date, 'YYYY/MM/DD').valueOf() / 1000}
                     value={time}
                     onChange={onChangeTime}
                 />

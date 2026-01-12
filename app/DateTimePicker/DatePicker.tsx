@@ -1,5 +1,5 @@
 import React from 'react';
-import moment from 'moment';
+import dayjs from '../../src/utils/dayjs-config';
 import Calendar, { TCalendarRefProps } from './Calendar';
 import './date-picker.scss';
 import { Wrapper } from '../../src/components/Icons';
@@ -53,7 +53,7 @@ const DatePickerInput = ({
     mode,
     display_format,
 }: TDatePickerInputProps) => {
-    const input_value = format ? moment(value, 'YYYY-MM-DD').format(display_format) : value;
+    const input_value = format ? dayjs(value, 'YYYY-MM-DD').format(display_format) : value;
     return (
         <input
             id={id}
@@ -68,14 +68,14 @@ const DatePickerInput = ({
     );
 };
 const formatDate = (date: string, date_format = 'YYYY-MM-DD') =>
-    moment(date || undefined, date_format).format(date_format);
+    dayjs(date || undefined, date_format).format(date_format);
 /**
  * return the number of days from today to date specified
  * @param  {String} date   the date to calculate number of days from today
  * @return {Number} an integer of the number of days
  */
 const daysFromTodayTo = (date: string): string => {
-    const diff = moment(date).utc().diff(moment().utc(), 'days');
+    const diff = dayjs(date).utc().diff(dayjs().utc(), 'days');
     return !date || diff < 0 ? '' : (diff + 1).toString();
 };
 const DatePicker = React.memo((props: TDatePickerProps) => {
@@ -128,7 +128,7 @@ const DatePicker = React.memo((props: TDatePickerProps) => {
     };
     const onSelectCalendar = (selected_date: string, _is_datepicker_visible = false) => {
         let _selected_date = selected_date;
-        if (!moment.utc(_selected_date).isValid) {
+        if (!dayjs.utc(_selected_date).isValid()) {
             _selected_date = '';
         }
         if (mode === 'duration') {
@@ -142,10 +142,10 @@ const DatePicker = React.memo((props: TDatePickerProps) => {
     const updateDatePickerValue = (_value: string, _mode?: string) => {
         setValue(_value, updateStore);
         // update Calendar
-        const new_date = _mode === 'duration' ? moment.utc().add(_value, 'days').format(date_format) : _value;
-        if (calendarRef.current && (moment.utc(new_date, date_format).isValid() || !new_date)) {
+        const new_date = _mode === 'duration' ? dayjs.utc().add(Number(_value), 'days').format(date_format) : _value;
+        if (calendarRef.current && (dayjs.utc(new_date, date_format).isValid() || !new_date)) {
             if (!new_date) {
-                const current_date = moment.utc(start_date).format(date_format);
+                const current_date = dayjs.utc(start_date).format(date_format);
                 calendarRef.current.setCalendarDate(current_date);
                 calendarRef.current.setSelectedDate(current_date);
             } else {

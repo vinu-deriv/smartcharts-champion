@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import moment from 'moment';
+import dayjs from '../../../src/utils/dayjs-config';
 import { TCalendarViewProps } from '../calendar.props';
 
 const getMonthHeaders = () => ({
@@ -18,8 +18,8 @@ const getMonthHeaders = () => ({
 });
 
 export const CalendarMonths = ({ calendar_date, isPeriodDisabled, onClick, selected_date }: TCalendarViewProps) => {
-    const moment_date = moment.utc(calendar_date);
-    const selected_month = moment.utc(selected_date).month();
+    const moment_date = dayjs.utc(calendar_date);
+    const selected_month = dayjs.utc(selected_date).month();
     const month_headers = getMonthHeaders();
 
     return (
@@ -28,7 +28,7 @@ export const CalendarMonths = ({ calendar_date, isPeriodDisabled, onClick, selec
                 <span
                     key={month}
                     className={`calendar-month ${idx === selected_month ? 'active' : ''} ${
-                        isPeriodDisabled(moment_date.month(month), 'month') ? 'disabled' : ''
+                        isPeriodDisabled(moment_date.month(idx), 'month') ? 'disabled' : ''
                     } `}
                     onClick={onClick.month}
                     data-month={idx}

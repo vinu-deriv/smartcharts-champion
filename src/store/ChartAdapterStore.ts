@@ -1,5 +1,5 @@
 import { action, makeObservable, observable, when, runInAction, computed } from 'mobx';
-import moment from 'moment';
+import dayjs from '../utils/dayjs-config';
 import debounce from 'lodash-es/debounce';
 import { TFlutterChart, TLoadHistoryParams, TQuote } from 'src/types';
 import { createChartElement, runChartApp } from 'src/flutter-chart';
@@ -509,7 +509,7 @@ export default class ChartAdapterStore {
     getInterpolatedPositionAndPrice = (epoch: number) => {
         if (!epoch) return;
 
-        const date = moment.utc(epoch).toDate();
+        const date = dayjs.utc(epoch).toDate();
 
         const tickIdx = this.mainStore.chart.feed?.getClosestQuoteIndexForEpoch(epoch);
 

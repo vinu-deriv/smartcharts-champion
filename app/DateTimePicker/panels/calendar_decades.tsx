@@ -1,10 +1,10 @@
 /* eslint-disable react/no-array-index-key */
-import moment from 'moment';
+import dayjs from '../../../src/utils/dayjs-config';
 import { TCalendarViewProps } from '../calendar.props';
 
 export const CalendarDecades = ({ calendar_date, isPeriodDisabled, onClick, selected_date }: TCalendarViewProps) => {
-    const selected_year = moment.utc(selected_date).year();
-    const moment_date = moment.utc(calendar_date);
+    const selected_year = dayjs.utc(selected_date).year();
+    const moment_date = dayjs.utc(calendar_date);
 
     const decades = [];
     let min_year = moment_date.year() - 10;
