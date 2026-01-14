@@ -69,4 +69,21 @@
         z-index: 5;
     }
 }
+
+.smartcharts-mobile {
+    .sc-toolbar-widget {
+        border: none;
+        background: transparent;
+        gap: 8px;
+
+        .ciq-menu {
+            .cq-menu-btn {
+                border-radius: 32px;
+            }
+        }
+        .sc-tooltip__inner {
+            display: none !important;
+        }
+    }
+}
 /*! rtl:end:ignore */

@@ -52,8 +52,13 @@ const ChartMode = ({ onChartType, onGranularity, portalNodeId = '' }: TChartMode
         >
             <Menu.Title>
                 <div className={classNames('sc-chart-mode__menu', { 'sc-chart-mode__menu--active': menuOpen })}>
-                    <span className='sc-chart-mode__menu__timeperiod'>{displayInterval}</span>
-                    <TypeIcon tooltip-title={t.translate(type.text)} />
+                    {isMobile && <span className='sc-chart-mode__menu__duration'>{displayInterval}</span>}
+                    {!isMobile && (
+                        <>
+                            <span className='sc-chart-mode__menu__timeperiod'>{displayInterval}</span>
+                            <TypeIcon tooltip-title={t.translate(type.text)} />
+                        </>
+                    )}
                 </div>
             </Menu.Title>
             <Menu.Body>
