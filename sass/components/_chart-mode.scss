@@ -105,4 +105,19 @@
         height: calc(100% - 32px);
         overflow-x: inherit;
     }
+    .sc-dtools__menu,
+    .sc-chart-mode__menu {
+        padding: 4px !important;
+        height: 32px !important;
+        width: 32px !important;
+        border-radius: 32px;
+        backdrop-filter: blur(4px);
+
+        @include themify($themes) {
+            background: themed('ToolbarWidgetBorder');
+        }
+    }
+    .sc-chart-mode__menu__timeperiod {
+        display: none;
+    }
 }

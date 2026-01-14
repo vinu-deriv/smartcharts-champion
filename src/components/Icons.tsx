@@ -57,6 +57,7 @@ import PositionBottom from '../../sass/icons/chart settings/setting/ic-position-
 import Back from '../../sass/icons/back/ic-back.svg';
 import DrawCursor from '../../sass/icons/pencil/ic-pencil.svg';
 import DrawTool from '../../sass/icons/common/ic-drawing-tool.svg';
+import DrawToolMobile from '../../sass/icons/common/ic-drawing-tool-mobile.svg';
 
 import HelpCenter from '../../sass/icons/common/ic-help-center.svg';
 import Download from '../../sass/icons/common/ic-download.svg';
@@ -80,6 +81,7 @@ import TypeHollow from '../../sass/icons/chart-type/ic-hollow.svg';
 import TypeOhlc from '../../sass/icons/chart-type/ic-ohlc.svg';
 
 import TypeAreaGrayscale from '../../sass/icons/chart-type/ic-area-grayscale.svg';
+import TypeAreaGrayscaleMobile from '../../sass/icons/chart-type/ic-area-grayscale-mobile.svg';
 import TypeCandleGrayscale from '../../sass/icons/chart-type/ic-candle-grayscale.svg';
 import TypeHollowGrayscale from '../../sass/icons/chart-type/ic-hollow-grayscale.svg';
 import TypeOhlcGrayscale from '../../sass/icons/chart-type/ic-ohlc-grayscale.svg';
@@ -303,6 +305,7 @@ export const DrawingCursorIcon = Wrapper(DrawCursor);
 export const ThemeLightIcon = Wrapper(ThemeLight);
 export const ThemeDarkIcon = Wrapper(ThemeDark);
 export const DrawToolIcon = Wrapper(DrawTool);
+export const DrawToolMobileIcon = Wrapper(DrawToolMobile);
 export const ActiveIcon = Wrapper(Active);
 export const FullScreenIcon = Wrapper(FullScreen);
 
@@ -375,6 +378,7 @@ export const TypeHollowIcon = Wrapper(TypeHollow);
 export const TypeOhlcIcon = Wrapper(TypeOhlc);
 
 export const TypeAreaGrayscaleIcon = Wrapper(TypeAreaGrayscale);
+export const TypeAreaGrayscaleMobileIcon = Wrapper(TypeAreaGrayscaleMobile);
 export const TypeCandleGrayscaleIcon = Wrapper(TypeCandleGrayscale);
 export const TypeHollowGrayscaleIcon = Wrapper(TypeHollowGrayscale);
 export const TypeOhlcGrayscaleIcon = Wrapper(TypeOhlcGrayscale);
