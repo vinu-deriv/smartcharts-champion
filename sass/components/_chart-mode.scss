@@ -112,12 +112,28 @@
         width: 32px !important;
         border-radius: 32px;
         backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
 
         @include themify($themes) {
-            background: themed('ToolbarWidgetBorder');
+            background: themed('ToolbarWidgetMobileBg');
         }
     }
     .sc-chart-mode__menu__timeperiod {
         display: none;
+    }
+    .sc-chart-mode__menu__duration {
+        text-align: center;
+        font-size: 12px;
+        font-style: normal;
+        line-height: 20px;
+        white-space: nowrap;
+        text-transform: lowercase;
+        word-spacing: -0.3em;
+        @include themify($themes) {
+            color: themed('ChartModeText');
+        }
     }
 }

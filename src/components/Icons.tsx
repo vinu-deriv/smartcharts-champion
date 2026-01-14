@@ -81,7 +81,6 @@ import TypeHollow from '../../sass/icons/chart-type/ic-hollow.svg';
 import TypeOhlc from '../../sass/icons/chart-type/ic-ohlc.svg';
 
 import TypeAreaGrayscale from '../../sass/icons/chart-type/ic-area-grayscale.svg';
-import TypeAreaGrayscaleMobile from '../../sass/icons/chart-type/ic-area-grayscale-mobile.svg';
 import TypeCandleGrayscale from '../../sass/icons/chart-type/ic-candle-grayscale.svg';
 import TypeHollowGrayscale from '../../sass/icons/chart-type/ic-hollow-grayscale.svg';
 import TypeOhlcGrayscale from '../../sass/icons/chart-type/ic-ohlc-grayscale.svg';
@@ -378,7 +377,6 @@ export const TypeHollowIcon = Wrapper(TypeHollow);
 export const TypeOhlcIcon = Wrapper(TypeOhlc);
 
 export const TypeAreaGrayscaleIcon = Wrapper(TypeAreaGrayscale);
-export const TypeAreaGrayscaleMobileIcon = Wrapper(TypeAreaGrayscaleMobile);
 export const TypeCandleGrayscaleIcon = Wrapper(TypeCandleGrayscale);
 export const TypeHollowGrayscaleIcon = Wrapper(TypeHollowGrayscale);
 export const TypeOhlcGrayscaleIcon = Wrapper(TypeOhlcGrayscale);

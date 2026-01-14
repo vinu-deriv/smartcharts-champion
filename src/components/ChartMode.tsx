@@ -7,7 +7,6 @@ import ChartTypes from './ChartTypes';
 import { Switch } from './Form';
 import {
     TypeAreaGrayscaleIcon,
-    TypeAreaGrayscaleMobileIcon,
     TypeCandleGrayscaleIcon,
     TypeHollowGrayscaleIcon,
     TypeOhlcGrayscaleIcon,
@@ -22,12 +21,12 @@ type TChartModeProps = {
     onGranularity: (granularity?: TGranularity) => void;
 };
 
-const getTypeMap = (isMobile: boolean) => ({
-    line: isMobile ? TypeAreaGrayscaleMobileIcon : TypeAreaGrayscaleIcon,
+const TypeMap = {
+    line: TypeAreaGrayscaleIcon,
     candles: TypeCandleGrayscaleIcon,
     ohlc: TypeOhlcGrayscaleIcon,
     hollow: TypeHollowGrayscaleIcon,
-});
+};
 
 const ChartMode = ({ onChartType, onGranularity, portalNodeId = '' }: TChartModeProps) => {
     const { chart, chartMode, chartType, timeperiod, state, chartSetting } = useStores();
@@ -39,7 +38,6 @@ const ChartMode = ({ onChartType, onGranularity, portalNodeId = '' }: TChartMode
     const { isSmoothChartEnabled, toggleSmoothChart } = chartSetting;
     const menuOpen = chartMode.menuStore.open;
 
-    const TypeMap = getTypeMap(!!isMobile);
     const TypeIcon = TypeMap[type.id as keyof typeof TypeMap];
 
     return (
@@ -54,8 +52,13 @@ const ChartMode = ({ onChartType, onGranularity, portalNodeId = '' }: TChartMode
         >
             <Menu.Title>
                 <div className={classNames('sc-chart-mode__menu', { 'sc-chart-mode__menu--active': menuOpen })}>
-                    {!isMobile && <span className='sc-chart-mode__menu__timeperiod'>{displayInterval}</span>}
-                    <TypeIcon tooltip-title={t.translate(type.text)} />
+                    {isMobile && <span className='sc-chart-mode__menu__duration'>{displayInterval}</span>}
+                    {!isMobile && (
+                        <>
+                            <span className='sc-chart-mode__menu__timeperiod'>{displayInterval}</span>
+                            <TypeIcon tooltip-title={t.translate(type.text)} />
+                        </>
+                    )}
                 </div>
             </Menu.Title>
             <Menu.Body>
