@@ -128,6 +128,15 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
     return 80;
   }
 
+  double? _getDefaultTickOffset(int? rightPadding, bool isTickGranularity) {
+    // Only apply this offset for mobile view with non-tick granularity
+    if (!configModel.isMobile || isTickGranularity) {
+      return null;
+    }
+    // Return half of max offset as default offset
+    return _getMaxCurrentTickOffset(rightPadding) / 2;
+  }
+
   Duration _getAnimationDuration({required bool isTickGranularity}) {
     if (!isTickGranularity) {
       return const Duration(milliseconds: 30);
@@ -313,6 +322,8 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                           : CrosshairVariant.largeScreen,
                       isLive: configModel.isLive,
                       chartAxisConfig: ChartAxisConfig(
+                          defaultTickOffset: _getDefaultTickOffset(
+                              rightPadding, isTickGranularity),
                           maxCurrentTickOffset:
                               _getMaxCurrentTickOffset(rightPadding),
                           smoothScrolling: configModel.isSmoothChartEnabled),
