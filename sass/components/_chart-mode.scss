@@ -120,13 +120,20 @@
         @include themify($themes) {
             background: themed('ToolbarWidgetMobileBg');
         }
+
+        .sc-notification-badge {
+            height: 8px;
+            width: 8px;
+            font-size: 0px;
+            right: 4px;
+        }
     }
     .sc-chart-mode__menu__timeperiod {
         display: none;
     }
     .sc-chart-mode__menu__duration {
         text-align: center;
-        font-size: 12px;
+        font-size: 14px;
         font-style: normal;
         line-height: 20px;
         white-space: nowrap;
