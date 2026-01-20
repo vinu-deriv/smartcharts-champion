@@ -75,9 +75,17 @@ jobs:
               if: github.event_name == 'workflow_dispatch'
               run: |
                   cd smartcharts-champion/chart_app
+                  if ! grep -q "ref: master" pubspec.yaml; then
+                    echo "Error: Expected 'ref: master' not found in pubspec.yaml"
+                    exit 1
+                  fi
                   sed -i 's/ref: master/ref: ${{ github.event.inputs.flutter_chart_ref }}/' pubspec.yaml
                   echo "Updated pubspec.yaml to use flutter-chart ref: ${{ github.event.inputs.flutter_chart_ref }}"
                   cat pubspec.yaml
+                  if ! grep -q "ref: ${{ github.event.inputs.flutter_chart_ref }}" pubspec.yaml; then
+                    echo "Error: Failed to update flutter-chart ref"
+                    exit 1
+                  fi
 
             - name: Build Flutter chart component
               run: |
