@@ -19,9 +19,9 @@ on:
                 required: true
                 default: 'master'
 
-# Cancel outdated deployments per PR
+# Cancel outdated deployments per PR or per smartcharts ref for manual triggers
 concurrency:
-    group: deploy-preview-${{ github.event.number || github.run_id }}
+    group: deploy-preview-${{ github.event.number || github.event.inputs.smartcharts_ref }}
     cancel-in-progress: true
 
 jobs:
@@ -73,16 +73,23 @@ jobs:
 
             - name: Update flutter-chart ref in pubspec.yaml
               if: github.event_name == 'workflow_dispatch'
+              env:
+                  FLUTTER_REF: ${{ github.event.inputs.flutter_chart_ref }}
               run: |
                   cd smartcharts-champion/chart_app
+                  # Validate input format (alphanumeric, slashes, hyphens, underscores, dots only)
+                  if ! [[ "${FLUTTER_REF}" =~ ^[a-zA-Z0-9/_.-]+$ ]]; then
+                    echo "Error: Invalid flutter_chart_ref format. Only alphanumeric characters, slashes, hyphens, underscores, and dots are allowed."
+                    exit 1
+                  fi
                   if ! grep -q "ref: master" pubspec.yaml; then
                     echo "Error: Expected 'ref: master' not found in pubspec.yaml"
                     exit 1
                   fi
-                  sed -i 's/ref: master/ref: ${{ github.event.inputs.flutter_chart_ref }}/' pubspec.yaml
-                  echo "Updated pubspec.yaml to use flutter-chart ref: ${{ github.event.inputs.flutter_chart_ref }}"
+                  sed -i "s/ref: master/ref: ${FLUTTER_REF}/" pubspec.yaml
+                  echo "Updated pubspec.yaml to use flutter-chart ref: ${FLUTTER_REF}"
                   cat pubspec.yaml
-                  if ! grep -q "ref: ${{ github.event.inputs.flutter_chart_ref }}" pubspec.yaml; then
+                  if ! grep -q "ref: ${FLUTTER_REF}" pubspec.yaml; then
                     echo "Error: Failed to update flutter-chart ref"
                     exit 1
                   fi
