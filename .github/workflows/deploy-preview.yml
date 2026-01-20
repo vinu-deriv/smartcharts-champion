@@ -1,5 +1,5 @@
 # Preview deployment workflow
-# Cancels previous deployments when new commits are pushed to PR
+# Builds SmartCharts-champion and integrates with derivatives-trader for preview
 
 name: Deploy Preview
 
@@ -14,18 +14,13 @@ concurrency:
     group: deploy-preview-${{ github.event.number }}
     cancel-in-progress: true
 
-env:
-    FLUTTER_VERSION: '3.24.1'
-    FLUTTER_WEB_RENDERER: 'html'
-    NODE_VERSION: '22.x'
-
-permissions:
-    contents: read
-    pull-requests: write
-
 jobs:
-    deploy-preview:
+    build_and_deploy_preview_link:
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            checks: write
+            pull-requests: write
         steps:
             - name: Verify user
               uses: 'deriv-com/shared-actions/.github/actions/verify_user_in_organization@v3'
@@ -33,40 +28,85 @@ jobs:
                   username: ${{ github.event.pull_request.user.login }}
                   token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
+            - name: Post preview build comment
+              id: post_preview_build_comment
+              uses: 'deriv-com/shared-actions/.github/actions/post_preview_build_comment@v1'
+              with:
+                  issue_number: ${{ github.event.number }}
+                  head_sha: ${{ github.event.pull_request.head.sha }}
+
             - name: Checkout repository
               uses: actions/checkout@v4
               with:
-                  # Pin to specific commit for security
+                  repository: deriv-com/smartcharts-champion
+                  path: smartcharts-champion
                   ref: ${{ github.event.pull_request.head.sha }}
-                  # Prevent checkout of untrusted code by limiting what gets checked out
                   persist-credentials: false
 
-            - name: Generate branch slug
-              id: branch-slug
-              env:
-                  PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-                  PR_NUMBER: ${{ github.event.number }}
-              run: |
-                  # Sanitize branch name to prevent injection
-                  BRANCH_SLUG=$(echo "$PR_HEAD_REF" | sed 's|/|-|g' | sed 's|[^a-zA-Z0-9_-]||g' | tr '[:upper:]' '[:lower:]')
-                  # Ensure branch slug is not empty and has max length for Cloudflare
-                  if [ -z "$BRANCH_SLUG" ]; then
-                    BRANCH_SLUG="pr-$PR_NUMBER"
-                  fi
-                  BRANCH_SLUG=$(echo "$BRANCH_SLUG" | cut -c1-63)
-                  echo "branch_slug=$BRANCH_SLUG" >> $GITHUB_OUTPUT
-                  echo "Generated branch slug: $BRANCH_SLUG"
-
-            - name: Deploy to Cloudflare Pages
-              id: deploy
-              uses: './.github/actions/build-and-deploy'
+            - name: Checkout derivatives-trader
+              uses: actions/checkout@v4
               with:
-                  cloudflare_api_token: ${{ secrets.CLOUDFLARE_TEST_LINKS_API_TOKEN }}
-                  cloudflare_account_id: ${{ secrets.CLOUDFLARE_TEST_LINKS_ACCOUNT_ID }}
-                  project_name: 'smartcharts-champion'
-                  branch_name: ${{ steps.branch-slug.outputs.branch_slug }}
-                  node_version: ${{ env.NODE_VERSION }}
-                  flutter_version: ${{ env.FLUTTER_VERSION }}
-                  flutter_web_renderer: ${{ env.FLUTTER_WEB_RENDERER }}
-                  environment: 'preview'
-                  commit_hash: ${{ github.event.pull_request.head.sha }}
+                  repository: deriv-com/derivatives-trader
+                  path: derivatives-trader
+                  ref: master
+                  token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+                  persist-credentials: false
+
+            - name: Setup Flutter
+              uses: subosito/flutter-action@62f096cacda5168a3bd7b95793373be14fa4fbaf
+              with:
+                  flutter-version: '3.24.1'
+                  channel: 'stable'
+                  cache: true
+
+            - name: Build Flutter chart component
+              run: |
+                  cd smartcharts-champion/chart_app
+                  flutter pub get
+                  flutter build web --web-renderer html --release
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22.x
+
+            - name: Setup derivatives-trader
+              run: cd derivatives-trader && npm run bootstrap
+
+            - name: Remove existing @deriv-com/smartcharts-champion in derivatives-trader
+              run: rm -rf derivatives-trader/node_modules/@deriv-com/smartcharts-champion/dist
+
+            - name: Setup SmartCharts
+              run: cd smartcharts-champion && npm install
+
+            - name: Build SmartCharts
+              run: cd smartcharts-champion && npm run build -- --output-path ../derivatives-trader/node_modules/@deriv-com/smartcharts-champion/dist
+
+            - name: Build derivatives-trader
+              env:
+                  NODE_ENV: 'staging'
+              run: cd derivatives-trader && npm run build:all
+
+            - name: Setup Node for Cloudflare
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            - name: Publish to CF pages branch
+              id: publish_to_pages_branch
+              uses: 'deriv-com/shared-actions/.github/actions/publish_to_pages_branch@v1'
+              with:
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TEST_LINKS_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_TEST_LINKS_ACCOUNT_ID }}
+                  project_name: 'derivatives-trader'
+                  branch_name: ${{ github.head_ref }}
+                  output_dir: derivatives-trader/packages/core/dist
+
+            - name: Generate preview link comment
+              if: always() && steps.post_preview_build_comment.outcome == 'success'
+              uses: 'deriv-com/shared-actions/.github/actions/post_preview_link_comment@v1'
+              with:
+                  issue_number: ${{ github.event.number }}
+                  check_run_id: ${{ steps.post_preview_build_comment.outputs.check_run_id }}
+                  preview_url: ${{ steps.publish_to_pages_branch.outputs.cf_pages_url }}
+                  status: ${{ job.status }}
