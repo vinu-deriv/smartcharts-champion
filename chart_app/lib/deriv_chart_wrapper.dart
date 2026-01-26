@@ -293,7 +293,7 @@ class DerivChartWrapperState extends State<DerivChartWrapper> {
                         if (!feedModel.waitingForHistory &&
                             feedModel.ticks.isNotEmpty &&
                             leftEpoch < feedModel.ticks.first.epoch) {
-                          feedModel.loadHistory(2500);
+                          feedModel.loadHistory(1000);
                         }
                         leftBoundEpoch = leftEpoch;
                         rightBoundEpoch = rightEpoch;
