@@ -2,6 +2,12 @@
     "name": "@deriv-com/smartcharts-champion",
     "version": "0.0.0-semantic",
     "main": "dist/smartcharts.js",
+    "sideEffects": [
+        "*.css",
+        "*.scss",
+        "*.svg",
+        "./src/overrides.ts"
+    ],
     "author": "vinu@deriv.com",
     "config": {
         "commitizen": {
@@ -156,7 +162,6 @@
         "dayjs": "^1.11.19",
         "event-emitter-es6": "^1.1.5",
         "html2canvas": "^1.4.1",
-        "lodash-es": "^4.17.21",
         "lz-string": "^1.5.0",
         "mobx": "^6.5.0",
         "mobx-react-lite": "^4.0.5",

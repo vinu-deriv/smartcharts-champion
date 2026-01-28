@@ -2,10 +2,10 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable react/sort-comp,react/no-multi-comp */
 import { ChangeEvent } from 'react';
-import debounce from 'lodash-es/debounce';
 
 import classNames from 'classnames';
 import { ArrayElement, TIcon, TNumberPickerValue } from 'src/types';
+import { debounce } from '../utils/lodash-lite';
 import Scroll from './Scroll';
 import { ArrowIcon, InputNumberPlusIcon, InputNumberMinusIcon, CheckboxIcon, CheckboxActiveIcon } from './Icons';
 import '../../sass/components/_form.scss';

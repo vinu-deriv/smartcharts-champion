@@ -7,8 +7,8 @@ import {
     TAddingStateInfo,
     TFloatingMenuPositionOffset,
 } from 'src/types';
-import set from 'lodash-es/set';
 import { capitalize, hexToInt, intToHexColor } from 'src/components/ui/utils';
+import { set } from '../utils/lodash-lite';
 import MainStore from '.';
 import { getDefaultDrawingConfig, getDrawTools, STATE } from '../Constant';
 import { clone, isLiteralObject, safeParse, transformStudiesforTheme } from '../utils';

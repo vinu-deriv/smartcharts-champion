@@ -214,6 +214,16 @@ const config = {
             commonjs: 'dayjs',
             commonjs2: 'dayjs',
         },
+        mobx: {
+            root: 'mobx',
+            commonjs: 'mobx',
+            commonjs2: 'mobx',
+        },
+        'mobx-react-lite': {
+            root: 'mobxReactLite',
+            commonjs: 'mobx-react-lite',
+            commonjs2: 'mobx-react-lite',
+        },
     },
 };
 
@@ -248,14 +258,29 @@ if (production) {
         ],
         splitChunks: {
             chunks: 'async', // Only split async chunks to maintain UMD compatibility
+            minSize: 20000, // Minimum size for a chunk (20KB)
             maxSize: 244000, // Split chunks larger than ~240KB
             cacheGroups: {
                 // Translation files can be split as they're loaded async
                 translations: {
                     test: /\.po$/,
                     name: 'translations',
-                    priority: 15,
+                    priority: 20,
                     chunks: 'all',
+                },
+                // Split html2canvas into its own chunk (already lazy-loaded)
+                html2canvas: {
+                    test: /[\\/]node_modules[\\/]html2canvas[\\/]/,
+                    name: 'html2canvas',
+                    chunks: 'async',
+                    priority: 15,
+                },
+                // Split indicator configs for lazy loading
+                indicators: {
+                    test: /[\\/]src[\\/](Constant|store[\\/](StudyLegendStore|DrawToolsStore))\.tsx?$/,
+                    name: 'indicators',
+                    chunks: 'async',
+                    priority: 10,
                 },
             },
         },

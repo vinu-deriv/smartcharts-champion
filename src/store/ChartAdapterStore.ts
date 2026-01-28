@@ -1,11 +1,11 @@
 import { action, makeObservable, observable, when, runInAction, computed } from 'mobx';
-import dayjs from '../utils/dayjs-config';
-import debounce from 'lodash-es/debounce';
 import { TFlutterChart, TLoadHistoryParams, TQuote } from 'src/types';
 import { createChartElement, runChartApp } from 'src/flutter-chart';
 import Painter from 'src/flutter-chart/painter';
 import { STATE } from 'src/Constant';
 import { intToHexColor } from 'src/components/ui/utils';
+import dayjs from '../utils/dayjs-config';
+import { debounce } from '../utils/lodash-lite';
 import MainStore from '.';
 
 export default class ChartAdapterStore {

@@ -1,5 +1,5 @@
-import debounce from 'lodash-es/debounce';
 import { action, observable, when, makeObservable } from 'mobx';
+import { debounce } from '../utils/lodash-lite';
 import MainStore from '.';
 import Context from '../components/ui/Context';
 import { TCustomEvent } from '../types';

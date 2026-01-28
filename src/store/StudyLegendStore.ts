@@ -1,9 +1,9 @@
 import { action, observable, reaction, when, makeObservable } from 'mobx';
 import React from 'react';
-import set from 'lodash-es/set';
 import Context from 'src/components/ui/Context';
 import { getUniqueId, hexToInt } from 'src/components/ui/utils';
 import { TActiveItem, TIndicatorConfig, TSettingsParameter } from 'src/types';
+import { set } from '../utils/lodash-lite';
 import MainStore from '.';
 import { IndicatorCatTrendDarkIcon, IndicatorCatTrendLightIcon } from '../components/Icons';
 import { getIndicatorsTree, getDefaultIndicatorConfig, STATE, getIndicatorCategoryName } from '../Constant';
