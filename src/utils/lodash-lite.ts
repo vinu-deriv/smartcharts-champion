@@ -110,8 +110,7 @@ export function debounce<T extends (...args: any[]) => any>(
             if (timeoutId === null) {
                 return leadingEdge(time);
             }
-        }
-        if (timeoutId === null) {
+        } else if (timeoutId === null) {
             startTimer(timerExpired, wait);
         }
         return result;

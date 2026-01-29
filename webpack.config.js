@@ -275,13 +275,9 @@ if (production) {
                     chunks: 'async',
                     priority: 15,
                 },
-                // Split indicator configs for lazy loading
-                indicators: {
-                    test: /[\\/]src[\\/](Constant|store[\\/](StudyLegendStore|DrawToolsStore))\.tsx?$/,
-                    name: 'indicators',
-                    chunks: 'async',
-                    priority: 10,
-                },
+                // Note: StudyLegendStore and DrawToolsStore are synchronously imported
+                // in MainStore, so they cannot be split without refactoring to lazy-load.
+                // Consider lazy-loading these stores in the future for further optimization.
             },
         },
         concatenateModules: true, // Enable module concatenation (scope hoisting)
