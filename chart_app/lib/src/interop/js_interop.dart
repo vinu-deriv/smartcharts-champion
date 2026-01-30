@@ -22,7 +22,10 @@ class JsInterop {
   external static void onChartLoad();
 
   /// Called on each line series paint
-  external static void onMainSeriesPaint(double currentTickPercent);
+  /// [currentTickPercent] - animation progress from 0 to 1
+  /// [lerpedQuote] - the interpolated quote value (null if not animating)
+  external static void onMainSeriesPaint(
+      double currentTickPercent, double? lerpedQuote);
 
   /// Called when visible area is change
   external static void onVisibleAreaChanged(int leftEpoch, int rightEpoch);

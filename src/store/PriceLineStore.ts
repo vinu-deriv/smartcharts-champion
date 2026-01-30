@@ -2,7 +2,7 @@ import EventEmitter from 'event-emitter-es6';
 import { action, computed, observable, when, makeObservable, reaction, IReactionDisposer } from 'mobx';
 import Context from 'src/components/ui/Context';
 import MainStore from '.';
-import { ARROW_HEIGHT, DIRECTIONS, lerp, makeElementDraggable } from '../utils';
+import { ARROW_HEIGHT, DIRECTIONS, makeElementDraggable } from '../utils';
 
 const LINE_OFFSET_HEIGHT = 4;
 const LINE_OFFSET_HEIGHT_HALF = LINE_OFFSET_HEIGHT >> 1;
@@ -87,19 +87,23 @@ export default class PriceLineStore {
         this.mainStore.chartAdapter.painter.registerCallback(this.drawBarrier);
     };
 
-    drawBarrier(currentTickPercent: number) {
+    drawBarrier(_currentTickPercent: number) {
         if (this.isDragging) return;
 
-        const quotes = this.mainStore.chart.feed?.quotes;
+        // Use the pre-computed lerped close value from the painter.
+        // The painter computes this value ONCE per paint frame before calling callbacks,
+        // ensuring all barriers use the exact same value for perfectly synchronized animation.
+        const lerpedClose = this.mainStore.chartAdapter.painter.lerpedClose;
 
-        if (!quotes || quotes.length < 2) return;
+        if (lerpedClose === null) {
+            this.top = this._calculateTop() as number;
+            return;
+        }
 
-        const currentQuote = this._getPrice(quotes[quotes.length - 1].Close);
-        const previousQuote = this._getPrice(quotes[quotes.length - 2].Close);
+        // Calculate the barrier price using the lerped quote value
+        const lerpedPrice = this._getPrice(lerpedClose);
 
-        const lerpQuote = lerp(previousQuote, currentQuote, currentTickPercent);
-
-        this.top = this._calculateTop(lerpQuote) as number;
+        this.top = this._calculateTop(lerpedPrice) as number;
     }
 
     destructor() {
